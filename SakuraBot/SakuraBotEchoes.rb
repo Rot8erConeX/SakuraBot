@@ -433,13 +433,14 @@ def generate_stats_list(bot)
           @stats[@stats.length-1][1][@stats[@stats.length-1][1].length-1][2]=true if user.id==167657750971547648 # automatic admin privleges for bot coder
           @stats[@stats.length-1][1][@stats[@stats.length-1][1].length-1][4][1]='S' if user.id==167657750971547648 # automatic S Support for bot coder
         end
-        bot.channel(@stats[@stats.length-1][3]).send_embed("**H-Hello!  I'm S-Sakura.  When d-did I get here?**") do |embed|
-          embed.color=0xFFABAF
-          f=[]
-          for i in 0...@stats[@stats.length-1][1].length
-            f.push("<@#{@stats[@stats.length-1][1][i][0]}>") if @stats[@stats.length-1][1][i][2]
+        begin
+          bot.channel(@stats[@stats.length-1][3]).send_embed("**H-Hello!  I'm S-Sakura.  When d-did I get here?**") do |embed|
+            embed.color=0xFFABAF
+            f=@stats[@stats.length-1][1].reject{|q| !q[2]}.map{|q| "<@#{q[0]}>"}
+            embed.description="#{f.join(' ')}\n\n1.) As of right now, the user#{'s' if f.length>1} listed above #{'is' if f.length==1}#{'are' if f.length>1} my only guardian#{'s' if f.length>1}.  They should use the `s!promote >Name<` command to promote others so they are also my guardians.  (Don't @ the user you wish to promote, just type their name).\n\n2.) I make commentary when members leave or join the server.  Please use the command `s!setchannel` in the channel where you want these messages displayed.\n\n3.) By default, I respond to messages that include shortcut phrases - for example, including \"pickup Sakura\" in your message will be identical to performing the `s!pickup` command.  Use the command `s!shortcuts` to toggle this functionality off for this server.\n\n4.) Use the command `s!help` for more information."
           end
-          embed.description="#{f.join(' ')}\n\n1.) As of right now, the user#{'s' if f.length>1} listed above #{'is' if f.length==1}#{'are' if f.length>1} my only guardian#{'s' if f.length>1}.  They should use the `s!promote >Name<` command to promote others so they are also my guardians.  (Don't @ the user you wish to promote, just type their name).\n\n2.) I make commentary when members leave or join the server.  Please use the command `s!setchannel` in the channel where you want these messages displayed.\n\n3.) By default, I respond to messages that include shortcut phrases - for example, including \"pickup Sakura\" in your message will be identical to performing the `s!pickup` command.  Use the command `s!shortcuts` to toggle this functionality off for this server.\n\n4.) Use the command `s!help` for more information."
+        rescue
+          puts "#{server.name} (#{server.id}) is not allowing me to post in the right channel."
         end
       else
         for j in 0...server.users.length
@@ -449,7 +450,7 @@ def generate_stats_list(bot)
             m=k if @stats[k][0]==server.id
           end
           if find_user_data_from_id(server.id,user.id,bot)<0 && !user.bot_account?
-            find_channel_from_server_id(@stats[i][3],server.id,bot).send_message("#{user.name[0,1]}-#{user.name}?  Wh-When did you get here?")
+            find_channel_from_server_id(@stats[i][3],server.id,bot).send_message("#{user.name[0,1]}-#{user.name}?  Wh-When did you get here?") rescue nil
             @stats[m][1].push([user.id,[user.distinct,user.name,user.display_name],false,user.mention,[0,''],[0,0]])
             @stats[m][1][@stats[m][@stats.length-1][1].length-1][2]=true if user.id==167657750971547648 # automatic admin privleges for bot coder
             @stats[m][1][@stats[m][@stats.length-1][1].length-1][4][1]='S' if user.id==167657750971547648 # automatic S Support for bot coder
@@ -986,13 +987,14 @@ end
 
 def greeting(event,bot)
   j=find_server_data(event,bot)
-  f=[]
-  for i in 0...@stats[j][1].length
-    f.push("<@#{@stats[j][1][i][0]}>") if @stats[j][1][i][2]
-  end
-  find_channel(@stats[j][3],event).send_embed("**H-Hello!  I'm S-Sakura.**") do |embed|
-    embed.color=0xFFABAF
-    embed.description="#{f.join(' ')}\n\n1.) As of right now, the user#{'s' if f.length>1} listed above #{'is' if f.length==1}#{'are' if f.length>1} my only guardian#{'s' if f.length>1}.  They should use the `s!promote >Name<` command to promote others so they are also my guardians.  (Don't @ the user you wish to promote, just type their name).\n\n2.) I make commentary when members leave or join the server.  Please use the command `s!setchannel` in the channel where you want these messages displayed.\n\n3.) By default, I respond to messages that include shortcut phrases - for example, including \"pickup Sakura\" in your message will be identical to performing the `s!pickup` command.  Use the command `s!shortcuts` to toggle this functionality off for this server.\n\n4.) Use the command `s!help` for more information."
+  f=@stats[@stats.length-1][1].reject{|q| !q[2]}.map{|q| "<@#{q[0]}>"}
+  begin
+    find_channel(@stats[j][3],event).send_embed("**H-Hello!  I'm S-Sakura.**") do |embed|
+      embed.color=0xFFABAF
+      embed.description="#{f.join(' ')}\n\n1.) As of right now, the user#{'s' if f.length>1} listed above #{'is' if f.length==1}#{'are' if f.length>1} my only guardian#{'s' if f.length>1}.  They should use the `s!promote >Name<` command to promote others so they are also my guardians.  (Don't @ the user you wish to promote, just type their name).\n\n2.) I make commentary when members leave or join the server.  Please use the command `s!setchannel` in the channel where you want these messages displayed.\n\n3.) By default, I respond to messages that include shortcut phrases - for example, including \"pickup Sakura\" in your message will be identical to performing the `s!pickup` command.  Use the command `s!shortcuts` to toggle this functionality off for this server.\n\n4.) Use the command `s!help` for more information."
+    rescue
+      puts "#{event.server.name} (#{event.server.id}) is not allowing me to post in the right channel."
+    end
   end
 end
 
@@ -1876,7 +1878,7 @@ bot.member_join do |event|
       f << "\n"
     }
     cross_update(bot,event.server.id)
-    find_channel(@stats[j][3],event).send_message("#{event.user.name} has j-joined the server!  \\*nervously hides*  Th-They have also j-joined the game!")
+    find_channel(@stats[j][3],event).send_message("#{event.user.name} has j-joined the server!  \\*nervously hides*  Th-They have also j-joined the game!") rescue nil
   end
 end
 
@@ -1904,7 +1906,7 @@ bot.member_leave do |event|
     f << "\n"
   }
   cross_update(bot,event.server.id)
-  find_channel(@stats[j][3],event).send_message(msg)
+  find_channel(@stats[j][3],event).send_message(msg) rescue nil
 end
 
 bot.ready do |event|
