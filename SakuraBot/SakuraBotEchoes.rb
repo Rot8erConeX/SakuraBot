@@ -3,6 +3,7 @@ system("title loading SakuraBot_Echoes")
 require 'discordrb' # Download link: https://github.com/meew0/discordrb
 require 'open-uri' # pre-installed with Ruby in Windows
 require 'net/http'
+require_relative 'rot8er_functs' # functions I use commonly in bots
 
 # The bot's token is basically their password, so is censored for obvious reasons
 bot = Discordrb::Commands::CommandBot.new token: '>Token<', client_id: 309909087867633664, prefix: ['s!','S!']
@@ -11,6 +12,7 @@ bot.bucket :level2, limit: 1, time_span: 3600, delay: 100
 bot.gateway.check_heartbeat_acks = false
 
 @stats=[]
+@embedless=[]
 
 # A.) server data:
 #    0.) Server ID number
@@ -34,6 +36,12 @@ bot.gateway.check_heartbeat_acks = false
 #    2.) bag data
 #    3.) whether or not Sakura's location is public knowledge (true/false)
 
+bot.command(:reboot, from: 167657750971547648) do |event| # reboots Liz
+  return nil unless event.user.id==167657750971547648 # only work when used by the developer
+  puts 'S!reboot'
+  exec "cd C:/Users/Mini-Matt/Desktop/devkit && SakuraBotEchoes.rb"
+end
+
 bot.command(:help) do |event, command, command2|
   command='' if command.nil?
   command='' if command.downcase=="module" && (command2.nil? || !['nicknames','nicks','nick','names','name','nickname','game','sakura','sakura_game','sakuragame','admin','admins','administrative','administrator','leader','rot8er','owner','coder','bot','bot_owner','mathoo'].include?(command2.downcase))
@@ -42,163 +50,58 @@ bot.command(:help) do |event, command, command2|
     command=''
   end
   if command.downcase=='addnickname'
-    event.channel.send_embed('**addnickname** __nickname__ __user__') do |embed|
-      embed.color=0xaa00ff
-      embed.description="adds `nickname` to the list of `user`'s nicknames on the server\nif `user` is undefined, adds `nickname` to the list of the invoker's own nicknames\nif neither `nickname` nor `user` is defined, reads the invoker's current display name and adds it to the list of their nicknames\n\nThis command will inform you if the attempted nickname belongs to someone else\nIt will also inform you if the intended recipient already has the intended nickname"
-      embed.footer={"text"=>"In PMs, this command will attempt to add the nickname to your nicknames in all the servers you and the bot share"}
-    end
+    create_embed(event,'**addnickname** __nickname__ __user__',"adds `nickname` to the list of `user`'s nicknames on the server\nif `user` is undefined, adds `nickname` to the list of the invoker's own nicknames\nif neither `nickname` nor `user` is defined, reads the invoker's current display name and adds it to the list of their nicknames\n\nThis command will inform you if the attempted nickname belongs to someone else\nIt will also inform you if the intended recipient already has the intended nickname",0xaa00ff,"In PMs, this command will attempt to add the nickname to your nicknames in all the servers you and the bot share")
   elsif ['census'].include?(command.downcase)
-    event.channel.send_embed("**#{command.downcase}**") do |embed|
-      embed.color=0xFFABAF
-      embed.description="This command performs a census of my subjects, sorting them by gender and size preference.  It will also show how the two categories interact."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,"**#{command.downcase}**","This command performs a census of my subjects, sorting them by gender and size preference.  It will also show how the two categories interact.",0xFFABAF,"This command is unavailable in PMs")
   elsif 'support'==command.downcase
-    event.channel.send_embed("**#{command.downcase}**") do |embed|
-      embed.color=0xFFABAF
-      embed.description="Shows how many Support Points I and the invoker have.\n\nYou need 3 Support Points in order to reach C Support.\nYou need 4 Support Points to go from C Support to B Support, which is a total of 7 Support Points from base.\nYou need 4 Support Points to go from B Support to A Support, which is a total of 11 Support Points from base.\nYou need 5 Support Points to go from A Support to A+ Support, which is a total of 16 Support Points from base.\n**Rot8er_ConeX#1737** is, by default, assigned S Support.\n\nEvery post you make in the server, aside from commands to me, has a 1% chance of giving you a Support Point."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,"**#{command.downcase}**","Shows how many Support Points I and the invoker have.\n\nYou need 3 Support Points in order to reach C Support.\nYou need 4 Support Points to go from C Support to B Support, which is a total of 7 Support Points from base.\nYou need 4 Support Points to go from B Support to A Support, which is a total of 11 Support Points from base.\nYou need 5 Support Points to go from A Support to A+ Support, which is a total of 16 Support Points from base.\n**Rot8er_ConeX#1737** is, by default, assigned S Support.\n\nEvery post you make in the server, aside from commands to me, has a 1% chance of giving you a Support Point.",0xFFABAF,"This command is unavailable in PMs")
   elsif ['deletenickname','removenickname'].include?(command.downcase)
-    event.channel.send_embed("**#{command.downcase}** __nickname__") do |embed|
-      embed.color=0xaa00ff
-      embed.description="#{command[0,6]}s the nickname `nickname` from the list of the invoker's nicknames.\n\nInforms you if you try to delete nothing."
-      embed.footer={"text"=>"In PMs, this command will remove the nickname from all the servers you and the bot share."}
-    end
+    create_embed(event,"**#{command.downcase}** __nickname__","#{command[0,6]}s the nickname `nickname` from the list of the invoker's nicknames.\n\nInforms you if you try to delete nothing.",0xaa00ff,"In PMs, this command will remove the nickname from all the servers you and the bot share.")
   elsif command.downcase=='mynicknames'
-    event.channel.send_embed('**mynicknames**') do |embed|
-      embed.color=0xaa00ff
-      embed.description="Shows a list of the invoker's nicknames on the server"
-      embed.footer={"text"=>"In PMs, this command will show your nicknames in all the servers you and the bot share."}
-    end
+    create_embed(event,'**mynicknames**',"Shows a list of the invoker's nicknames on the server",0xaa00ff,"In PMs, this command will show your nicknames in all the servers you and the bot share.")
   elsif command.downcase=='pickup'
-    event.channel.send_embed('**pickup**') do |embed|
-      embed.color=0xFFABAF
-      embed.description="If I am on the ground, this command is used to pick me up\nIf I am not on the ground, this command does nothing."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,'**pickup**',"If I am on the ground, this command is used to pick me up\nIf I am not on the ground, this command does nothing.",0xFFABAF,"This command is unavailable in PMs")
   elsif ['cuddle','snuggle','hug','huggle'].include?(command.downcase)
-    event.channel.send_embed("**#{command.downcase}**") do |embed|
-      embed.color=0xFFABAF
-      embed.description="If you are the one holding me, this command causes you to cuddle me, with any consequences thereof being your fault.\n\nIf you are not holding me, this command does nothing."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,"**#{command.downcase}**","If you are the one holding me, this command causes you to cuddle me, with any consequences thereof being your fault.\n\nIf you are not holding me, this command does nothing.",0xFFABAF,"This command is unavailable in PMs")
   elsif ['headpat','pet','pat'].include?(command.downcase)
-    event.channel.send_embed("**#{command.downcase}**") do |embed|
-      embed.color=0xFFABAF
-      embed.description="If my location is public knowledge, this command causes you to pat my head, with any consequences thereof being your fault.\n\nIf my location is not public knowledge, this command does nothing."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,"**#{command.downcase}**","If my location is public knowledge, this command causes you to pat my head, with any consequences thereof being your fault.\n\nIf my location is not public knowledge, this command does nothing.",0xFFABAF,"This command is unavailable in PMs")
   elsif command.downcase=='find'
-    event.channel.send_embed('**find**') do |embed|
-      embed.color=0xFFABAF
-      embed.description="If my location is public knowledge, reveals it to all.\nIf not, states so."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,'**find**',"If my location is public knowledge, reveals it to all.\nIf not, states so.",0xFFABAF,"This command is unavailable in PMs")
   elsif ['putdown','setdown','floor'].include?(command.downcase)
-    event.channel.send_embed("**#{command.downcase}**") do |embed|
-      embed.color=0xFFABAF
-      embed.description="If you are holding me, this command will set me on the ground.\nIf you are not holding me, this command does nothing."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,"**#{command.downcase}**","If you are holding me, this command will set me on the ground.\nIf you are not holding me, this command does nothing.",0xFFABAF,"This command is unavailable in PMs")
   elsif ['toss','throw'].include?(command.downcase)
-    event.channel.send_embed("**#{command.downcase}**") do |embed|
-      embed.color=0xFFABAF
-      embed.description="If you are holding me, this command will toss me in the air.\nThe next person to post will catch me.  If the next post is from a robot, I will land on the floor.\nIf you are not the one holding me, this command does nothing."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
-  elsif command.downcase=='passto'
-    event.channel.send_embed('**passto** __name__') do |embed|
-      embed.color=0xFFABAF
-      embed.description="If you are holding me, this command will pass me to the user with the nickname `name`.\nIf you cross out their name (like so: `~~name~~`), I will delete your message and PM the recipient, so that only you and they know where I am.\n\nIf you are not holding me, this command does nothing.\n\n*Tip:* You can technically pass to yourself, which is considered \"moving me to your other hand\".  By doing so and crossing out your name, you will be the only one who knows where I am."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,"**#{command.downcase}**","If you are holding me, this command will toss me in the air.\nThe next person to post will catch me.  If the next post is from a robot, I will land on the floor.\nIf you are not the one holding me, this command does nothing.",0xFFABAF,"This command is unavailable in PMs")
+  elsif ['passto','giveto'].include?(command.downcase)
+    create_embed(event,"**#{command.downcase}** __name__","If you are holding me, this command will pass me to the user with the nickname `name`.\nIf you cross out their name (like so: `~~name~~`), I will delete your message and PM the recipient, so that only you and they know where I am.\n\nIf you are not holding me, this command does nothing.\n\n*Tip:* You can technically pass to yourself, which is considered \"moving me to your other hand\".  By doing so and crossing out your name, you will be the only one who knows where I am.",0xFFABAF,"This command is unavailable in PMs")
   elsif command.downcase=='takefrom'
-    event.channel.send_embed('**takefrom** __name__') do |embed|
-      embed.color=0xFFABAF
-      embed.description="If you are holding me, this command will do nothing.\n\nIf you are not the one holding me, this command frisks the user with the nickname `name`.\nIf they are the one holding me, then I will be transferred to your possession, unless they're hiding me in their pocket (which means you'll have to use the `s!pickpocket` command) or in their bag/purse (in which case you wait for me to escape).\nIf you cross out their name (like so: `~~name~~`), I will PM you your victory, and PM them to let them know they are no longer holding me.  This means only you will know where I am.\n\n**Please note that each user can only use this command once every five minutes.**"
-      embed.footer={"text"=>"This command is unavailable in PMs."}
-    end
+    create_embed(event,'**takefrom** __name__',"If you are holding me, this command will do nothing.\n\nIf you are not the one holding me, this command frisks the user with the nickname `name`.\nIf they are the one holding me, then I will be transferred to your possession, unless they're hiding me in their pocket (which means you'll have to use the `s!pickpocket` command) or in their bag/purse (in which case you wait for me to escape).\nIf you cross out their name (like so: `~~name~~`), I will PM you your victory, and PM them to let them know they are no longer holding me.  This means only you will know where I am.\n\n**Please note that each user can only use this command once every five minutes.**",0xFFABAF,"This command is unavailable in PMs.")
   elsif command.downcase=='pickpocket'
-    event.channel.send_embed('**pickpocket** __name__') do |embed|
-      embed.color=0xFFABAF
-      embed.description="If you are holding me, this command will do nothing.\n\nIf you are not the one holding me, this command pickpockets the user with the nickname `name`.\nIf they are the one holding me, and are hiding me in their pocket, then I will be transferred to your possession.\nIf you cross out their name (like so: `~~name~~`), I will PM you your victory, and PM them to let them know they are no longer holding me.  This means only you will know where I am.\n\n**Please note that each user can only use this command once every hour.**"
-      embed.footer={"text"=>"This command is unavailable in PMs."}
-    end
+    create_embed(event,'**pickpocket** __name__',"If you are holding me, this command will do nothing.\n\nIf you are not the one holding me, this command pickpockets the user with the nickname `name`.\nIf they are the one holding me, and are hiding me in their pocket, then I will be transferred to your possession.\nIf you cross out their name (like so: `~~name~~`), I will PM you your victory, and PM them to let them know they are no longer holding me.  This means only you will know where I am.\n\n**Please note that each user can only use this command once every hour.**",0xFFABAF,"This command is unavailable in PMs.")
   elsif command.downcase=='pocket'
-    event.channel.send_embed('**pocket**') do |embed|
-      embed.color=0xFFABAF
-      embed.description="If you are holding me, this command will place me in your pocket.\nWhile in your pocket, I cannot be taken from you via the `s!takefrom` command, and you are instead vulnerable to the `s!pickpocket` command, which has a longer cooldown time.\nPlacing me in your pocket has risks, though - there's a small chance I might escape, setting me back on the ground.\n\nIf you are not holding me, this command does nothing.\n\nIf my location is not publically known, it will remain that way because I will delete your message and PM you."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,'**pocket**',"If you are holding me, this command will place me in your pocket.\nWhile in your pocket, I cannot be taken from you via the `s!takefrom` command, and you are instead vulnerable to the `s!pickpocket` command, which has a longer cooldown time.\nPlacing me in your pocket has risks, though - there's a small chance I might escape, setting me back on the ground.\n\nIf you are not holding me, this command does nothing.\n\nIf my location is not publically known, it will remain that way because I will delete your message and PM you.",0xFFABAF,"This command is unavailable in PMs")
   elsif ['bag','purse'].include?(command.downcase)
-    event.channel.send_embed("**#{command.downcase}**") do |embed|
-      embed.color=0xFFABAF
-      embed.description="If you are holding me, this command will place me in your #{command.downcase}.\nWhile in your #{command.downcase}, I cannot be taken from you via the `s!takefrom` or `s!pickpocket` commands.\nHowever, once in your #{command.downcase}, I will begin to try to escape - and it takes me anywhere between ten and twenty minutes to do so, depending on the make of #{command.downcase}.\n\nIf you are not holding me, this command does nothing.\n\nIf my location is not publically known, it will become so through the use of this command.\n\n***Note:*** Repeated use of this command in too short a timespan will cause me to escape faster than the mentioned ten-to-twenty-minutes.  Use this command at your own risk."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,"**#{command.downcase}**","If you are holding me, this command will place me in your #{command.downcase}.\nWhile in your #{command.downcase}, I cannot be taken from you via the `s!takefrom` or `s!pickpocket` commands.\nHowever, once in your #{command.downcase}, I will begin to try to escape - and it takes me anywhere between ten and twenty minutes to do so, depending on the make of #{command.downcase}.\n\nIf you are not holding me, this command does nothing.\n\nIf my location is not publically known, it will become so through the use of this command.\n\n***Note:*** Repeated use of this command in too short a timespan will cause me to escape faster than the mentioned ten-to-twenty-minutes.  Use this command at your own risk.",0xFFABAF,"This command is unavailable in PMs")
   elsif command.downcase=='setchannel'
-    event.channel.send_embed('**setchannel**') do |embed|
-      embed.color=0xff0000
-      embed.description="Sets the current channel as the bot's default for this server, for use with the member join/leave messages\n\n**This command is ADMIN-ONLY**"
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,'**setchannel**',"Sets the current channel as the bot's default for this server, for use with the member join/leave messages\n\n**This command is ADMIN-ONLY**",0xff0000,"This command is unavailable in PMs")
   elsif command.downcase=='shortcuts'
-    event.channel.send_embed('**shortcuts** __true/false__') do |embed|
-      embed.color=0xff0000
-      embed.description="Sets whether or not I will check all messages for shortcut phrases, such as \"set down Sakura\" which counts as the command `s!putdown`.\nIf not input is included, toggles the current setting,\n\nI will still respond to commands.\n\n**This command is ADMIN-ONLY**"
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,'**shortcuts** __true/false__',"Sets whether or not I will check all messages for shortcut phrases, such as \"set down Sakura\" which counts as the command `s!putdown`.\nIf not input is included, toggles the current setting,\n\nI will still respond to commands.\n\n**This command is ADMIN-ONLY**",0xff0000,"This command is unavailable in PMs")
   elsif command.downcase=='autofind'
-    event.channel.send_embed('**autofind**') do |embed|
-      embed.color=0xff0000
-      embed.description="This command PMs the invoker with my location, even if it is not publicly known.\n\n**This command is ADMIN-ONLY**"
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,'**autofind**',"This command PMs the invoker with my location, even if it is not publicly known.\n\n**This command is ADMIN-ONLY**",0xff0000,"This command is unavailable in PMs")
   elsif command.downcase=='autotake'
-    event.channel.send_embed('**autotake**') do |embed|
-      embed.color=0xff0000
-      embed.description="This command allows the invoker to instantly obtain possession of me, regardless of where I am.\n\n**This command is ADMIN-ONLY**"
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,'**autotake**',"This command allows the invoker to instantly obtain possession of me, regardless of where I am.\n\n**This command is ADMIN-ONLY**",0xff0000,"This command is unavailable in PMs")
   elsif command.downcase=='endgame'
-    event.channel.send_embed('**endgame**') do |embed|
-      embed.color=0xff0000
-      embed.description="This command ends the round of the Sakura game, announcing who is holding me and therefore the winner, then setting me on the floor to start another round.\n\n**This command is ADMIN-ONLY**\nNote that an admin cannot end the game if they are the one holding me, as their attempt to end the game could be seen as rigging it."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,'**endgame**',"This command ends the round of the Sakura game, announcing who is holding me and therefore the winner, then setting me on the floor to start another round.\n\n**This command is ADMIN-ONLY**\nNote that an admin cannot end the game if they are the one holding me, as their attempt to end the game could be seen as rigging it.",0xff0000,"This command is unavailable in PMs")
   elsif ['makeadmin','makeguardian','promote'].include?(command.downcase)
-    event.channel.send_embed("**#{command.downcase}** __nickname__") do |embed|
-      embed.color=0xff0000
-      embed.description="Grants admin-level command-access to the user with the nickname `nickname`.\n\n**This command is ADMIN-ONLY**, you cannot use it to promote yourself."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,"**#{command.downcase}** __nickname__","Grants admin-level command-access to the user with the nickname `nickname`.\n\n**This command is ADMIN-ONLY**, you cannot use it to promote yourself.",0xff0000,"This command is unavailable in PMs")
   elsif ['notanadmin','notaguardian'].include?(command.downcase)
-    event.channel.send_embed("**#{command.downcase}**") do |embed|
-      embed.color=0xff0000
-      embed.description="When used by an admin, demotes the invoker from admin status.  For use when an admin wishes to not be special.\n\nFor obvious reasons, **this command is (technically) ADMIN-ONLY**\n~~non-admins can use it but it has no effect~~.\n\nInforms you if there would be no remaining admins if you ceased to be one."
-      embed.footer={"text"=>"This command is unavailable in PMs"}
-    end
+    create_embed(event,"**#{command.downcase}**","When used by an admin, demotes the invoker from admin status.  For use when an admin wishes to not be special.\n\nFor obvious reasons, **this command is (technically) ADMIN-ONLY**\n~~non-admins can use it but it has no effect~~.\n\nInforms you if there would be no remaining admins if you ceased to be one.",0xff0000,"This command is unavailable in PMs")
   elsif command.downcase=='reboot'
-    event.channel.send_embed('**reboot**') do |embed|
-      embed.color=0x40C0F0
-      embed.description="Reboots the bot, installing any updates.\n\n**This command is only able to be used by Rot8er_ConeX**"
-    end
-  elsif command.downcase=='liliputia'
-    event.channel.send_embed('**liliputia**') do |embed|
-      embed.color=0x40C0F0
-      embed.description="This is a shortcut command for `s!pickup` followed by `s!pocket` if successful.\nThe responses will be sent via PM, and the invoking message deleted, but my location will still be considered public knowledge.\n\n**This command is only able to be used by Rot8er_ConeX**"
-    end
-  elsif command.downcase=='staff'
-    event.channel.send_embed('**staff~ staff~**') do |embed|
-      embed.color=0x40C0F0
-      embed.description="This is a shortcut command for `s!pickup` followed by `s!pocket` if successful.\nThe responses will be sent via PM, and the invoking message deleted, but my location will still be considered public knowledge.\n\n**This command is only able to be used by Rot8er_ConeX**"
-    end
+    create_embed(event,'**reboot**',"Reboots the bot, installing any updates.\n\n**This command is only able to be used by Rot8er_ConeX**",0x40C0F0)
+  elsif ['liliputia','staff'].include?(command.downcase)
+    command='staff~ staff~' if command.downcase=='staff'
+    create_embed(event,"**#{command.downcase}**","This is a shortcut command for `s!pickup` followed by `s!pocket` if successful.\nThe responses will be sent via PM, and the invoking message deleted, but my location will still be considered public knowledge.\n\n**This command is only able to be used by Rot8er_ConeX**",0x40C0F0)
   elsif command.downcase=='game'
-    event.channel.send_embed('**game** __str__') do |embed|
-      embed.color=0x0080ff
-      embed.description="This command shows the extended rules of the game.\nSetting `str` to \"rules\" or \"goal\" will only show the end goal of the game.\nSetting `str` to \"now\" will show only the actions available to you now, considering my current position."
-    end
+    create_embed(event,'**game** __str__',"This command shows the extended rules of the game.\nSetting `str` to \"rules\" or \"goal\" will only show the end goal of the game.\nSetting `str` to \"now\" will show only the actions available to you now, considering my current position.",0x0080ff)
   elsif command.downcase=='module'
     event.respond "Command Prefix: `s!`\nYou can also use `s!help` __command__ to learn more about a particular command.#{"\nUse `s!game` to learn more about the game's rules" if ['game','sakura','sakura_game','sakuragame'].include?(command2.downcase)}"
     display_module(1,event,bot) if ['nicknames','nicks','nick','names','name','nickname'].include?(command2.downcase)
@@ -286,13 +189,7 @@ bot.command(:census) do |event|
   u[23]="#{u[23]} non-binaries" unless u[23]=="0"
   u[24]="#{u[24]} total"
   n="\n"
-  event.channel.send_embed("__**#{event.server.name} census totals**__") do |embed|
-    embed.color=0xFFABAF
-    embed.description="**#{u[24]}**"
-    embed.thumbnail=Discordrb::Webhooks::EmbedThumbnail.new(url: event.server.icon_url) unless event.server.icon_url.nil?
-    embed.add_field(name: "Sizes", value: "#{"#{u[16]}" unless u[16]=="0"}#{"#{n}#{u[17]}" unless u[17]=="0"}#{"#{n}#{u[18]}" unless u[18]=="0"}#{"#{n}#{u[19]}" unless u[19]=="0"}", inline: true)
-    embed.add_field(name: "Genders", value: "#{"#{u[20]}" unless u[20]=="0"}#{"#{n}#{u[21]}" unless u[21]=="0"}#{"#{n}#{u[22]}" unless u[22]=="0"}#{"#{n}#{u[23]}" unless u[23]=="0"}", inline: true)
-  end
+  create_embed(event,"__**#{event.server.name} census totals**__","**#{u[24]}**",0xFFABAF,nil,event.server.icon_url,[["Sizes","#{"#{u[16]}" unless u[16]=="0"}#{"#{n}#{u[17]}" unless u[17]=="0"}#{"#{n}#{u[18]}" unless u[18]=="0"}#{"#{n}#{u[19]}" unless u[19]=="0"}"],["Genders","#{"#{u[20]}" unless u[20]=="0"}#{"#{n}#{u[21]}" unless u[21]=="0"}#{"#{n}#{u[22]}" unless u[22]=="0"}#{"#{n}#{u[23]}" unless u[23]=="0"}"]])
   b=[u[0],u[1],u[2],u[3]]
   for i in 0...b.length
     b[i]=nil if b[i]=="0"
@@ -301,50 +198,31 @@ bot.command(:census) do |event|
   s1="#{"#{u[4]}" unless u[4]=="0"}#{"#{n}#{u[5]}" unless u[5]=="0"}#{"#{n}#{u[6]}" unless u[6]=="0"}#{"#{n}#{u[7]}" unless u[7]=="0"}"
   s2="#{"#{u[8]}" unless u[8]=="0"}#{"#{n}#{u[9]}" unless u[9]=="0"}#{"#{n}#{u[10]}" unless u[10]=="0"}#{"#{n}#{u[11]}" unless u[11]=="0"}"
   s3="#{"#{u[12]}" unless u[12]=="0"}#{"#{n}#{u[13]}" unless u[13]=="0"}#{"#{n}#{u[14]}" unless u[14]=="0"}#{"#{n}#{u[15]}" unless u[15]=="0"}"
-  event.channel.send_embed("__**#{event.server.name} census data**__") do |embed|
-    embed.color=0xFFABAF
-    embed.description="**Unspecified size:** #{b.join(', ')}" unless b.length==0 || b.nil?
-    embed.add_field(name: "Giants", value: s1, inline: true) unless s1.length==0
-    embed.add_field(name: "Tinies", value: s2, inline: true) unless s2.length==0
-    embed.add_field(name: "Size-shifters", value: s3, inline: true) unless s3.length==0
-  end
+  flds=[]
+  flds.push(['Giants',s1]) unless s1.length==0
+  flds.push(['Tinies',s2]) unless s2.length==0
+  flds.push(['Size-shifters',s3]) unless s3.length==0
+  flds=nil if flds.length.zero?
+  create_embed(event,"__**#{event.server.name} census data**__","#{"**Unspecified size:** #{b.join(', ')}" unless b.length==0 || b.nil?}",0xFFABAF,nil,nil,flds)
 end
 
 def display_module(v,event,bot)
   case v
   when 1
-    event.channel.send_embed("__**Nicknames**__") do |embed|
-      embed.color=0xaa00ff
-      embed.description="`addnickname` __nickname__ __user__\n`deletenickname` __nickname__ *also `removenickname`*\n`mynicknames`"
-    end
+    create_embed(event,"__**Nicknames**__","`addnickname` __nickname__ __user__\n`deletenickname` __nickname__ *also `removenickname`*\n`mynicknames`",0xaa00ff)
   when 2
-    event.channel.send_embed("__**The Sakura Game**__") do |embed|
-      embed.color=0xFFABAF
-      embed.description="__When I'm on the ground__\n`pickup`\n\n__When you're holding me__\n`putdown` *also `setdown` or `floor`*\n`pocket`\n`bag` or `purse`\n`passto` __name__\n`toss` *also `throw`*\n`cuddle` *also `snuggle` or `hug`*\n\n__When someone else is holding me__\n`takefrom` __name__\n`pickpocket` __name__\n\n__Any time__\n`find`\n`headpat` *also `pet`*"
-      embed.footer={"text"=>"These commands are unavailable in PMs."}
-    end
+    create_embed(event,"__**The Sakura Game**__","__When I'm on the ground__\n`pickup`\n\n__When you're holding me__\n`putdown` *also `setdown` or `floor`*\n`pocket`\n`bag` or `purse`\n`passto` __name__\n`toss` *also `throw`*\n`cuddle` *also `snuggle` or `hug`*\n\n__When someone else is holding me__\n`takefrom` __name__\n`pickpocket` __name__\n\n__Any time__\n`find`\n`headpat` *also `pet`*",0xFFABAF,"These commands are unavailable in PMs.")
   when 3
-    event.channel.send_embed("__**Admin**__") do |embed|
-      embed.color=0xff0000
-      embed.description="__game__\n`autofind`\n`autotake`\n`endgame`\n\n__general admin__\n`setchannel`\n`promote` __user__ *also `makeadmin` or `makeguardian`*\n`notanadmin` *also `notaguardian`*\n\n`shortcuts`"
-      embed.footer={"text"=>"These commands are unavailable in PMs, and the ones that are crossed out aren't yet coded."}
-    end
+    create_embed(event,"__**Admin**__","__game__\n`autofind`\n`autotake`\n`endgame`\n\n__general admin__\n`setchannel`\n`promote` __user__ *also `makeadmin` or `makeguardian`*\n`notanadmin` *also `notaguardian`*\n\n`shortcuts`",0xff0000,"These commands are unavailable in PMs, and the ones that are crossed out aren't yet coded.")
   when 4
-    event.channel.send_embed("__**Bot Owner**__") do |embed|
-      embed.color=0x40C0F0
-      embed.description="`reboot`\n`liliputia` *also `staff`*"
-      embed.footer={"text"=>"These commands are exclusive to Rot8er_ConeX"}
-    end
+    create_embed(event,"__**Bot Owner**__","`reboot`\n`liliputia` *also `staff`*",0x40C0F0,"These commands are exclusive to Rot8er_ConeX")
   when 5
     desc="You can use the command `s!pickup` to pick me up.  I will then be in your possession until someone else takes me from you or you give me to someone."
     unless event.server.nil?
       j=find_server_data(event,bot)
       desc="#{desc}\n*Including the phrase \"pick up Sakura\" or \"picks up Sakura\" in your message will also count.*" if @stats[j][5]
     end
-    event.channel.send_embed("__**When I'm on the ground**__") do |embed|
-      embed.color=0xFFABAF
-      embed.description=desc
-    end
+    create_embed(event,"__**When I'm on the ground**__",desc,0xFFABAF)
   when 6
     desc1="You can use the command `s!putdown` or `s!setdown` to place me back on the ground.  I will then no longer be in your possession."
     desc2="You can use the command `s!pocket` to place me in your pocket.  Other players will no longer be able to use the `s!takefrom` command to take you from me, and must instead resort to using the `s!pickpocket` command."
@@ -362,30 +240,34 @@ def display_module(v,event,bot)
         f="Movement verbs: put, place, set, slip, slide, puts, places, sets, slips, slides"
       end
     end
-    event.channel.send_embed("__**When I'm in your possession**__") do |embed|
-      embed.color=0xFFABAF
-      embed.description="#{desc1}\n\n#{desc2}\n\n#{desc3}\n\nYou can use the command `s!passto Name` to pass me to another user.  Crossing out their name like `s!passto ~~Name~~` will pass me to them in secret.  This transfers possession to them.\n\n#{desc4}\n\n#{desc5}"
-      embed.footer={"text"=>f} unless f.nil?
-    end
+    create_embed(event,"__**When I'm in your possession**__","#{desc1}\n\n#{desc2}\n\n#{desc3}\n\nYou can use the command `s!passto Name` to pass me to another user.  Crossing out their name like `s!passto ~~Name~~` will pass me to them in secret.  This transfers possession to them.\n\n#{desc4}\n\n#{desc5}",0xFFABAF,f)
   when 7
-    desc="Once every five minutes, you can use the `s!takefrom Name` command to try to take me from someone.  If your guess as to who is holding me is correct and I am not in their pocket, bag, or purse, then I will be trasferred to your possession\nYou can also cross out their name like this: `s!takefrom ~~Name~~`, then you will take me from them in secret.\n\nOnce every hour, you can use the `s!pickpocket Name` command to try to take me from someone's pocket.  If your guess as to who is hiding me in their pocket is correct, then I will be transferred to your possession.\nYou can also cross out their name like this: `s!pickpocket ~~Name~~`, then you will pickpocket them in secret."
-    event.channel.send_embed("__**When I'm in someone else's possession**__") do |embed|
-      embed.color=0xFFABAF
-      embed.description=desc
-    end
+    create_embed(event,"__**When I'm in someone else's possession**__","Once every five minutes, you can use the `s!takefrom Name` command to try to take me from someone.  If your guess as to who is holding me is correct and I am not in their pocket, bag, or purse, then I will be trasferred to your possession\nYou can also cross out their name like this: `s!takefrom ~~Name~~`, then you will take me from them in secret.\n\nOnce every hour, you can use the `s!pickpocket Name` command to try to take me from someone's pocket.  If your guess as to who is hiding me in their pocket is correct, then I will be transferred to your possession.\nYou can also cross out their name like this: `s!pickpocket ~~Name~~`, then you will pickpocket them in secret.",0xFFABAF)
   when 8
-    desc="You can use the command `s!find` to find me.  If my location is public knowledge, then I will repeat it.  If my location is not public knowledge, I will say so.\n\nYou can use the command `s!headpat` or `s!pet` to pat my head.  The consequences of this action will be your fault!"
-    event.channel.send_embed("__**At any time**__") do |embed|
-      embed.color=0xFFABAF
-      embed.description=desc
-    end
+    create_embed(event,"__**At any time**__","You can use the command `s!find` to find me.  If my location is public knowledge, then I will repeat it.  If my location is not public knowledge, I will say so.\n\nYou can use the command `s!headpat` or `s!pet` to pat my head.  The consequences of this action will be your fault!",0xFFABAF)
   when 9
-    desc="The goal of the game is to be the one holding me, Sakura, when the game ends.  However, when the game ends is unknown.\n\nIn this manner, the game is similar to Hot Potato, except in reverse - as in, you *want* the potato."
-    event.channel.send_embed("__**GAME RULES**__") do |embed|
-      embed.color=0x0080ff
-      embed.description=desc
-    end
+    create_embed(event,"__**GAME RULES**__","The goal of the game is to be the one holding me, Sakura, when the game ends.  However, when the game ends is unknown.\n\nIn this manner, the game is similar to Hot Potato, except in reverse - as in, you *want* the potato.",0x0080ff)
   end
+end
+
+def metadata_load()
+  if File.exist?('C:/Users/Mini-Matt/Desktop/devkit/SakuraSave.txt')
+    b=[]
+    File.open('C:/Users/Mini-Matt/Desktop/devkit/SakuraSave.txt').each_line do |line|
+      b.push(eval line)
+    end
+  else
+    b=[[]]
+  end
+  @embedless=b[0]
+end
+
+def metadata_save() # saves the metadata
+  x=@embedless.map{|q| q}
+  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraSave.txt', 'w') { |f|
+    f.puts x.to_s
+    f.puts "\n"
+  }
 end
 
 bot.command(:game) do |event, rtime|
@@ -992,9 +874,9 @@ def greeting(event,bot)
     find_channel(@stats[j][3],event).send_embed("**H-Hello!  I'm S-Sakura.**") do |embed|
       embed.color=0xFFABAF
       embed.description="#{f.join(' ')}\n\n1.) As of right now, the user#{'s' if f.length>1} listed above #{'is' if f.length==1}#{'are' if f.length>1} my only guardian#{'s' if f.length>1}.  They should use the `s!promote >Name<` command to promote others so they are also my guardians.  (Don't @ the user you wish to promote, just type their name).\n\n2.) I make commentary when members leave or join the server.  Please use the command `s!setchannel` in the channel where you want these messages displayed.\n\n3.) By default, I respond to messages that include shortcut phrases - for example, including \"pickup Sakura\" in your message will be identical to performing the `s!pickup` command.  Use the command `s!shortcuts` to toggle this functionality off for this server.\n\n4.) Use the command `s!help` for more information."
-    rescue
-      puts "#{event.server.name} (#{event.server.id}) is not allowing me to post in the right channel."
     end
+  rescue
+    puts "#{event.server.name} (#{event.server.id}) is not allowing me to post in the right channel."
   end
 end
 
@@ -1019,10 +901,7 @@ bot.command(:alladmins) do |event|
   for i in 0...@stats[j][1].length
     f.push(@stats[j][1][i][1][1]) if @stats[j][1][i][2]
   end
-  event.channel.send_embed("__**admins**__") do |embed|
-    embed.color=0xff0000
-    embed.description=f.join("\n")
-  end
+  create_embed(event,"__**admins**__",f.join("\n"),0xff0000)
 end
 
 bot.command(:shortcuts) do |event, m|
@@ -1066,7 +945,7 @@ bot.command(:purse) do |event|
   bag_purse(event,bot,'purse')
 end
 
-bot.command(:passto) do |event, name|
+bot.command([:passto,:giveto]) do |event, name|
   if event.server.nil?
     event.respond "This command c-cannot be used in a PM"
     return nil
@@ -1524,11 +1403,7 @@ bot.command(:mynicknames) do |event|
 end
 
 bot.command(:story) do |event|
-  event.channel.send_embed('') do |embed|
-    embed.description="__**Act 1:** ***Naomi's Gate***__\n[link](http://rot8erconex.deviantart.com/art/Naomi-s-Gate-617539555)\n\n__**Act 2:** ***Shrunken Sakura and the Secret Seller***__\n[link](http://rot8erconex.deviantart.com/art/Shrunken-Sakura-and-the-Secret-Seller-621356929)\n\n__**Act 3:** ***Liliputia's Demand***__\n[Part 1 link](http://sta.sh/01ibugks17ue)\n[Part 2 link](http://sta.sh/01rkyopjbwlo)\n\n__**Act 4:** ***Sakura's Fate***__\nIncomplete\n\n__**Act 5:** ***Return of the Secret Seller***__\nIncomplete"
-    embed.color=0xFFABAF
-    embed.image = Discordrb::Webhooks::EmbedImage.new(url: "http://orig05.deviantart.net/fc9d/f/2016/352/6/0/shrunken_sakura__altered__by_rot8erconex-darzxz3.png")
-  end
+  create_embed(event,'',"__**Act 1:** ***Naomi's Gate***__\n[link](http://rot8erconex.deviantart.com/art/Naomi-s-Gate-617539555)\n\n__**Act 2:** ***Shrunken Sakura and the Secret Seller***__\n[link](http://rot8erconex.deviantart.com/art/Shrunken-Sakura-and-the-Secret-Seller-621356929)\n\n__**Act 3:** ***Liliputia's Demand***__\n[Part 1 link](http://sta.sh/01ibugks17ue)\n[Part 2 link](http://sta.sh/01rkyopjbwlo)\n\n__**Act 4:** ***Sakura's Fate***__\nIncomplete\n\n__**Act 5:** ***Return of the Secret Seller***__\nIncomplete",0xFFABAF,nil,[nil,"http://orig05.deviantart.net/fc9d/f/2016/352/6/0/shrunken_sakura__altered__by_rot8erconex-darzxz3.png"])
 end
 
 bot.command([:deletenickname,:removenickname]) do |event, name, usr|
@@ -1601,32 +1476,16 @@ bot.command(:why) do |event, str|
   str='' if str.nil?
   num=str.to_i
   if num==1 || num<=0
-    event.channel.send_embed('__**#1: What is *G/t*?**__') do |embed|
-      embed.color=0xFFABAF
-      embed.description="In order to explain why the Sakura Game exists, I must first explain that the man who coded me, **Rot8er_ConeX#1737**, is a fan of something that is referred to its fans as \"G/t\", short for \"Giant/Tiny\".  Stories like *The Borrowers*, *Gulliver's Travels*, and *Alice in Wonderland* are probably the best way to explain the concept quickly - stories or art which involve two persons of differing scales interacting.\nThe particular category of G/t he prefers is called SW, Shrunken Woman.  Just like the name implies, it involves a female \"tiny\".  He also prefers that the \"giant\" be actual human-sized.\n\nIt is his theory that the reason he likes G/t has to due with his low muscle tone.  When he was younger, he saw scenes (probably from Hallmark movies) of happy couples where the man carried the woman around.  Something in the back of his mind told him that he would never be able to have that experience - at least, not with a normal-sized woman.  Since then, he's had a loving relationship with a normal-sized woman - obviously without ever carrying her - and knows firsthand that a relationship doesn't need to be Hallmark perfect to be a good relationship, but the enjoyment of imagining a miniature maiden remains."
-      embed.footer={"text"=>"TL;DR: Pocket people"}
-    end
+    create_embed(event,'__**#1: What is *G/t*?**__',"In order to explain why the Sakura Game exists, I must first explain that the man who coded me, **Rot8er_ConeX#1737**, is a fan of something that is referred to its fans as \"G/t\", short for \"Giant/Tiny\".  Stories like *The Borrowers*, *Gulliver's Travels*, and *Alice in Wonderland* are probably the best way to explain the concept quickly - stories or art which involve two persons of differing scales interacting.\nThe particular category of G/t he prefers is called SW, Shrunken Woman.  Just like the name implies, it involves a female \"tiny\".  He also prefers that the \"giant\" be actual human-sized.\n\nIt is his theory that the reason he likes G/t has to due with his low muscle tone.  When he was younger, he saw scenes (probably from Hallmark movies) of happy couples where the man carried the woman around.  Something in the back of his mind told him that he would never be able to have that experience - at least, not with a normal-sized woman.  Since then, he's had a loving relationship with a normal-sized woman - obviously without ever carrying her - and knows firsthand that a relationship doesn't need to be Hallmark perfect to be a good relationship, but the enjoyment of imagining a miniature maiden remains.",0xFFABAF,"TL;DR: Pocket people")
   end
   if num==2 || num<=0
-    event.channel.send_embed('__**#2: Why does the Sakura *Bot* exist?**__') do |embed|
-      embed.color=0xFFABAF
-      embed.description="On 20 July 2016, a two-year-long relationship between #{"my coder (**" if num==2}Rot8er#{"_ConeX#1737**)" if num==2} and a woman named Rebecca was forcibly terminated by his mother, and this sent him into a massive, months-long depression.  Naturally, as coping mechanisms, he turned to the two remaining positive forces in his life: video games, and G/t.  Even video games were pulled out from under him when an error of judgement he made on 14 September of the same year led to his $400 game library being stolen.  This left him in an unhealthy emotional state where he had to be obsessed with G/t just to stay above water.\n\nIt is in this state that Rot8er was when he encountered his first Discord bot.  When he realized that the bot in question had been coded by someone on the server he encountered it on, and that Discord bots could be coded in the one programming language he knew, suddenly he had a short-term goal - code a Discord Bot.  For a while, he was left in confusion, unknowning of what he even wanted his bot to do, before he eventually decided that the bot would be an artificial Shrunken Woman."
-      embed.footer={"text"=>"TL;DR: A depressed nerd."}
-    end
+    create_embed(event,'__**#2: Why does the Sakura *Bot* exist?**__',"On 20 July 2016, a two-year-long relationship between #{"my coder (**" if num==2}Rot8er#{"_ConeX#1737**)" if num==2} and a woman named Rebecca was forcibly terminated by his mother, and this sent him into a massive, months-long depression.  Naturally, as coping mechanisms, he turned to the two remaining positive forces in his life: video games, and G/t.  Even video games were pulled out from under him when an error of judgement he made on 14 September of the same year led to his $400 game library being stolen.  This left him in an unhealthy emotional state where he had to be obsessed with G/t just to stay above water.\n\nIt is in this state that Rot8er was when he encountered his first Discord bot.  When he realized that the bot in question had been coded by someone on the server he encountered it on, and that Discord bots could be coded in the one programming language he knew, suddenly he had a short-term goal - code a Discord Bot.  For a while, he was left in confusion, unknowning of what he even wanted his bot to do, before he eventually decided that the bot would be an artificial Shrunken Woman.",0xFFABAF,"TL;DR: A depressed nerd.")
   end
   if num==3 || num<=0
-    event.channel.send_embed('__**#3: How did the Sakura Bot become the Sakura *Game*?**__') do |embed|
-      embed.color=0xFFABAF
-      embed.description="After having settled upon the - admittedly-odd-and-slightly-creepy-in-retrospect - choice of coding an artificial mini maiden, #{"my coder (**" if num==3}Rot8er#{"_ConeX#1737**)" if num==3} began actually doing so.  Obviously he wouldn't be able to code an actual AI, so he coded in functionality - being able to place her in your pocket, being able to cuddle with her, etc.  Each functionality was coded so she'd react differently based on who did it (though originally, it was based on user's display name, not even username!)\n\nEventually, some of his friends began to try to \"steal\" the forming bot away from him, which caused him to make it so she kept track of who was holding her.  They tried to hide her away, and it formed into him actually enabling them to do so - but with risks involved!  Etc., Etc.\n\nOver time, the entire thing formed into a game - who could hold onto Sakura the longest?  Who would be the one holding her when time ran out?"
-      embed.footer={"text"=>"TL;DR: The depressed nerd's friends teased him and it turned into a game."}
-    end
+    create_embed(event,'__**#3: How did the Sakura Bot become the Sakura *Game*?**__',"After having settled upon the - admittedly-odd-and-slightly-creepy-in-retrospect - choice of coding an artificial mini maiden, #{"my coder (**" if num==3}Rot8er#{"_ConeX#1737**)" if num==3} began actually doing so.  Obviously he wouldn't be able to code an actual AI, so he coded in functionality - being able to place her in your pocket, being able to cuddle with her, etc.  Each functionality was coded so she'd react differently based on who did it (though originally, it was based on user's display name, not even username!)\n\nEventually, some of his friends began to try to \"steal\" the forming bot away from him, which caused him to make it so she kept track of who was holding her.  They tried to hide her away, and it formed into him actually enabling them to do so - but with risks involved!  Etc., Etc.\n\nOver time, the entire thing formed into a game - who could hold onto Sakura the longest?  Who would be the one holding her when time ran out?",0xFFABAF,"TL;DR: The depressed nerd's friends teased him and it turned into a game.")
   end
   if num==4 || num<=0
-    event.channel.send_embed("__**#4: Why do you say that you're playing \"*Echoes*\" of the Sakura Game?**__") do |embed|
-      embed.color=0xFFABAF
-      embed.description="Since coding the original Sakura Bot, #{"my coder (**" if num==4}Rot8er#{"_ConeX#1737**)" if num==4} has coded numerous other bots - the FEIndex bot that shows data on characters from *Fire Emblem: Awakening* and *Fire Emblem: Fates*, a server mod bot based on an inside joke, a dice-rolling bot for chat-based RPs, and (most recently) a stats-lookup bot for *Fire Emblem Heroes* themed after my Nohrian counterpart.  Coding these bots helped him learn more of the DiscordRB API, and taught him features that he felt could benefit the first bot he ever coded - the Sakura Game.\n\nHe went into the original bot's source code with the intention of just remastering it - give it new features, but keep the original code intact.  But when he got into the guts of the code, he found that he'd learned so much that half of his old code was unintelligible, and what little he did understand was incompatible with the changes he wanted to make.\n\nSo he did the one thing a successful franchise will always eventually do, and remade his first Discord game."
-      embed.footer={"text"=>"TL;DR: A remake of the original game."}
-    end
+    create_embed(event,"__**#4: Why do you say that you're playing \"*Echoes*\" of the Sakura Game?**__","Since coding the original Sakura Bot, #{"my coder (**" if num==4}Rot8er#{"_ConeX#1737**)" if num==4} has coded numerous other bots - the FEIndex bot that shows data on characters from *Fire Emblem: Awakening* and *Fire Emblem: Fates*, a server mod bot based on an inside joke, a dice-rolling bot for chat-based G/t tabletop RPs, and a stats-lookup bot for *Fire Emblem Heroes* themed after my Nohrian counterpart - just to name a few.  Coding these bots helped him learn more of the DiscordRB API, and taught him features that he felt could benefit the first bot he ever coded - the Sakura Game.\n\nHe went into the original bot's source code with the intention of just remastering it - give it new features, but keep the original code intact.  But when he got into the guts of the code, he found that he'd learned so much that half of his old code was unintelligible, and what little he did understand was incompatible with the changes he wanted to make.\n\nSo he did the one thing a successful franchise will always eventually do, and remade his first Discord game.",0xFFABAF,"TL;DR: A remake of the original game.")
   end
 end
 
@@ -1736,7 +1595,9 @@ bot.command(:snagchannels) do |event, server_id|
   msg="__**#{bot.server(server_id.to_i).name}**__\n\n__*Text Channels*__"
   srv=bot.server(server_id.to_i)
   for i in 0...srv.channels.length
-    msg=extend_message(msg,"*#{srv.channels[i].name}* (#{srv.channels[i].id})",event) if srv.channels[i].type==0
+    chn=srv.channels[i]
+    puts bot.user(bot.profile.id).on(srv.id).permission?(:send_messages,chn).to_s
+    msg=extend_message(msg,"*#{chn.name}* (#{chn.id})#{" - can post" if bot.user(bot.profile.id).on(srv.id).permission?(:send_messages,chn)}",event) if chn.type==0
   end
   event.respond msg
 end
@@ -1770,6 +1631,7 @@ bot.message do |event|
     if !check_for_admin?(event,bot)
       chn=event.channel.id
       chn=435157862772113409 if event.server.id==435068874862362636
+      chn=530826194007097384 if event.server.id==327599133210705923
       bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached C Support.") if @stats[j][1][i][4][0]==3
       bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached B Support.") if @stats[j][1][i][4][0]==3+4
       bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached A Support.") if @stats[j][1][i][4][0]==3+4+4
@@ -1912,6 +1774,8 @@ end
 bot.ready do |event|
   bot.game="Loading, please wait..."
   generate_stats_list(bot)
+  metadata_load()
+  metadata_save()
   bot.game="Echoes of the Sakura Game"
   system("color c0")
   system("title SakuraBot_Echoes")
