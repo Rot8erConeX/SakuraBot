@@ -294,9 +294,18 @@ def generate_stats_list(bot)
   if File.exist?('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav')
     b=[]
     File.open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav').each_line do |line|
-      b.push(eval line)
+      b.push(line.gsub("\n",''))
     end
-    @stats=b[0]
+    b=b.join("\n").split("\n\n\n").map{|q| q.split("\n\n").map{|q2| q2.split("\n").map{|q3| (eval q3)}}}
+    for i in 0...b.length
+      b[i][1]=b[i][1,b[i].length-1]
+      b[i]=b[i][0,2]
+      for i2 in 1...b[i][0].length
+        b[i].push(b[i][0][i2])
+      end
+      b[i][0]=b[i][0][0]
+    end
+    @stats=b.map{|q| q}
     for i in 0...bot.servers.values.length
       server=bot.servers.values[i]
       if find_server_data_from_id(server.id,bot)<0
@@ -311,9 +320,9 @@ def generate_stats_list(bot)
         @stats.push([server.id,[],[0,false,[false,''],true],chn.id,server.name,true])
         for j in 0...server.users.length
           user=server.users[j]
-          @stats[@stats.length-1][1].push([user.id,[user.distinct,user.name,user.display_name],false,user.mention,[0,''],[0,0]]) if !user.bot_account?
+          @stats[@stats.length-1][1].push([user.id,[user.distinct,user.name,user.display_name],false,[0,''],[0,0]]) if !user.bot_account?
           @stats[@stats.length-1][1][@stats[@stats.length-1][1].length-1][2]=true if user.id==167657750971547648 # automatic admin privleges for bot coder
-          @stats[@stats.length-1][1][@stats[@stats.length-1][1].length-1][4][1]='S' if user.id==167657750971547648 # automatic S Support for bot coder
+          @stats[@stats.length-1][1][@stats[@stats.length-1][1].length-1][3][1]='S' if user.id==167657750971547648 # automatic S Support for bot coder
         end
         begin
           bot.channel(@stats[@stats.length-1][3]).send_embed("**H-Hello!  I'm S-Sakura.  When d-did I get here?**") do |embed|
@@ -333,16 +342,16 @@ def generate_stats_list(bot)
           end
           if find_user_data_from_id(server.id,user.id,bot)<0 && !user.bot_account?
             find_channel_from_server_id(@stats[i][3],server.id,bot).send_message("#{user.name[0,1]}-#{user.name}?  Wh-When did you get here?") rescue nil
-            @stats[m][1].push([user.id,[user.distinct,user.name,user.display_name],false,user.mention,[0,''],[0,0]])
+            @stats[m][1].push([user.id,[user.distinct,user.name,user.display_name],false,[0,''],[0,0]])
             @stats[m][1][@stats[m][@stats.length-1][1].length-1][2]=true if user.id==167657750971547648 # automatic admin privleges for bot coder
-            @stats[m][1][@stats[m][@stats.length-1][1].length-1][4][1]='S' if user.id==167657750971547648 # automatic S Support for bot coder
+            @stats[m][1][@stats[m][@stats.length-1][1].length-1][3][1]='S' if user.id==167657750971547648 # automatic S Support for bot coder
           end
         end
       end
     end
     for j in 0...@stats.length
       for i in 0...@stats[j][1].length
-        @stats[j][1][i][5]=[0,0] if @stats[j][1][i][5].nil?
+        @stats[j][1][i][4]=[0,0] if @stats[j][1][i][4].nil?
       end
     end
   else
@@ -352,14 +361,48 @@ def generate_stats_list(bot)
       @stats.push([server.id,[],[0,false,[false,''],true],server.general_channel.id,server.name,true])
       for j in 0...server.users.length
         user=server.users[j]
-        @stats[@stats.length-1][1].push([user.id,[user.distinct,user.name,user.display_name],false,user.mention,[0,''],[0,0]]) if !user.bot_account?
+        @stats[@stats.length-1][1].push([user.id,[user.distinct,user.name,user.display_name],false,[0,''],[0,0]]) if !user.bot_account?
         @stats[@stats.length-1][1][@stats[@stats.length-1][1].length-1][2]=true if user.id==167657750971547648 # automatic admin privleges for bot coder
-        @stats[@stats.length-1][1][@stats[@stats.length-1][1].length-1][4][1]='S' if user.id==167657750971547648 # automatic S Support for bot coder
+        @stats[@stats.length-1][1][@stats[@stats.length-1][1].length-1][3][1]='S' if user.id==167657750971547648 # automatic S Support for bot coder
       end
     end
   end
+  save_stats_data()
+end
+
+def save_stats_data()
   open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
     f << @stats.to_s
+  }
+  s=@stats.map{|q| q}
+  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
+    for i in 0...s.length
+      f << s[i][0]
+      f << "\n"
+      f << s[i][2]
+      f << "\n"
+      f << s[i][3]
+      f << "\n\""
+      f << s[i][4]
+      f << "\"\n"
+      f << s[i][5]
+      f << "\n"
+      f << "\n"
+      for i2 in 0...s[i][1].length
+        f << s[i][1][i2][0]
+        f << "\n"
+        f << s[i][1][i2][1]
+        f << "\n"
+        f << s[i][1][i2][2]
+        f << "\n"
+        f << s[i][1][i2][3]
+        f << "\n"
+        f << s[i][1][i2][4]
+        f << "\n"
+        f << "\n"
+      end
+      f << "\n"
+    end
   }
 end
 
@@ -501,11 +544,11 @@ def pickup(event,bot,two_parter=false)
       elsif check_for_admin?(event,bot) # picked up by bot admin on this server
         event.respond "Hello, #{event.user.display_name[0,1]}-#{event.user.display_name}"
       else # picked up by anyone else
-        event.respond "\\*flails* P-Put me down!" if ['','-'].include?(@stats[j][1][i][4][1])
-        event.respond "P-Put me d-down, p-please." if @stats[j][1][i][4][1]=='C'
-        event.respond "Huh? \\*looks around, confused*" if @stats[j][1][i][4][1]=='B'
-        event.respond "O-Oh, hello." if @stats[j][1][i][4][1]=='A'
-        event.respond "Hello, #{event.user.display_name[0,1]}-#{event.user.display_name}" if @stats[j][1][i][4][1]=='A+'
+        event.respond "\\*flails* P-Put me down!" if ['','-'].include?(@stats[j][1][i][3][1])
+        event.respond "P-Put me d-down, p-please." if @stats[j][1][i][3][1]=='C'
+        event.respond "Huh? \\*looks around, confused*" if @stats[j][1][i][3][1]=='B'
+        event.respond "O-Oh, hello." if @stats[j][1][i][3][1]=='A'
+        event.respond "Hello, #{event.user.display_name[0,1]}-#{event.user.display_name}" if @stats[j][1][i][3][1]=='A+'
       end
     else
       return true
@@ -531,10 +574,7 @@ def pickup(event,bot,two_parter=false)
   else
     event.respond "I'm n-not on the ground."
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -563,10 +603,7 @@ def putdown(event,bot)
   else
     event.respond "You are not h-holding me."
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -602,9 +639,9 @@ def pocket_sakura(event,bot,a=5,b=8,liliputia=false)
         event.respond "You are not holding me."
       end
     elsif liliputia
-      event.user.pm("^^ \\*snuggles, is warm*")
+      event.user.pm("^^ \\*snuggles* Mmm, toasty.")
     elsif event.user.id==167657750971547648
-      event.respond "\\*snuggles, is warm*"
+      event.respond "\\*snuggles* Mmm, toasty."
     else
       event << "\\*struggles*"
       if rand(100)<b
@@ -619,10 +656,7 @@ def pocket_sakura(event,bot,a=5,b=8,liliputia=false)
   else
     event.respond "You are not holding me."
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -630,17 +664,14 @@ def bag_check(event,bot)
   j=find_server_data(event,bot)
   i=find_user_data(event,bot)
   t=Time.now.to_i
-  if t-@stats[j][1][i][5][0]<18000 # less than five hours since the last time you tried to bag her
-    @stats[j][1][i][5][1]+=1 # increment by 1
+  if t-@stats[j][1][i][4][0]<18000 # less than five hours since the last time you tried to bag her
+    @stats[j][1][i][4][1]+=1 # increment by 1
   else
-    @stats[j][1][i][5][1]=1 # reset counter
+    @stats[j][1][i][4][1]=1 # reset counter
   end
-  @stats[j][1][i][5][0]=t
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
-  return true if @stats[j][1][i][5][1]>=4 # three bagging sessions
+  @stats[j][1][i][4][0]=t
+  save_stats_data()
+  return true if @stats[j][1][i][4][1]>=4 # three bagging sessions
   return false
 end
 
@@ -678,10 +709,7 @@ def bag_purse(event,bot,container)
   else
     event.respond "You are not h-holding me."
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -715,10 +743,7 @@ def toss(event,bot)
          @stats[j][2][3]=true
          event.respond "Th-Thank you for catching me, #{event2.user.name[0,1]}-#{event2.user.name}.#{"\n\\*cuddles*" if event2.user.id==167657750971547648}"
        end
-       open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-          f << @stats.to_s
-          f << "\n"
-       }
+       save_stats_data()
     }
     return nil
   end  
@@ -786,11 +811,11 @@ def cuddle(event,bot)
     elsif check_for_admin?(event,bot)
       event.respond "\\*cuddles back*"
     else
-      event.respond "\\*pushes away* I m-may be small and c-cute, but I'm not a st-stuffed animal." if ['','-'].include?(@stats[j][1][i][4][1])
-      event.respond "\\*pushes away* P-Please don't." if @stats[j][1][i][4][1]=='C'
-      event.respond "\\*halfheartedly pushes away*" if @stats[j][1][i][4][1]=='B'
-      event.respond "\\*teasingly pushes away, then cuddles*" if @stats[j][1][i][4][1]=='A'
-      event.respond "\\*cuddles back*" if @stats[j][1][i][4][1]=='A+'
+      event.respond "\\*pushes away* I m-may be small and c-cute, but I'm not a st-stuffed animal." if ['','-'].include?(@stats[j][1][i][3][1])
+      event.respond "\\*pushes away* P-Please don't." if @stats[j][1][i][3][1]=='C'
+      event.respond "\\*halfheartedly pushes away*" if @stats[j][1][i][3][1]=='B'
+      event.respond "\\*teasingly pushes away, then cuddles*" if @stats[j][1][i][3][1]=='A'
+      event.respond "\\*cuddles back*" if @stats[j][1][i][3][1]=='A+'
     end
   end
   return nil
@@ -816,11 +841,11 @@ def headpat(event,bot)
     elsif check_for_admin?(event,bot)
       event.respond "\\*leans into the pat*"
     else
-      event.respond "\\*pushes away* I m-may be small and c-cute, but I'm not a p-pet." if ['','-'].include?(@stats[j][1][i][4][1])
-      event.respond "\\*pushes away* P-Please don't." if @stats[j][1][i][4][1]=='C'
-      event.respond "\\*halfheartedly pushes away*" if @stats[j][1][i][4][1]=='B'
-      event.respond "\\*teasingly pushes away, then leans into the pat*" if @stats[j][1][i][4][1]=='A'
-      event.respond "\\*leans into the pat*" if @stats[j][1][i][4][1]=='A+'
+      event.respond "\\*pushes away* I m-may be small and c-cute, but I'm not a p-pet." if ['','-'].include?(@stats[j][1][i][3][1])
+      event.respond "\\*pushes away* P-Please don't." if @stats[j][1][i][3][1]=='C'
+      event.respond "\\*halfheartedly pushes away*" if @stats[j][1][i][3][1]=='B'
+      event.respond "\\*teasingly pushes away, then leans into the pat*" if @stats[j][1][i][3][1]=='A'
+      event.respond "\\*leans into the pat*" if @stats[j][1][i][3][1]=='A+'
     end
   end
   return nil
@@ -918,10 +943,7 @@ bot.command(:shortcuts) do |event, m|
     @stats[j][5]=true if ['on','yes','true'].include?(m.downcase)
     @stats[j][5]=false if ['off','no','false'].include?(m.downcase)
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   event.respond "I w-will #{"no longer " unless @stats[j][5]}r-respond to sh-shortcut phrases on this s-server."
 end
 
@@ -995,10 +1017,7 @@ bot.command([:passto,:giveto]) do |event, name|
   else
     event.respond "You are not holding me."
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -1058,10 +1077,7 @@ bot.command(:takefrom, bucket: :level1, rate_limit_message: 'You can\'t try to f
   else
     event.respond "Th-That is n-not who is h-holding me."
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -1121,10 +1137,7 @@ bot.command(:pickpocket, bucket: :level2, rate_limit_message: 'You can\'t try to
   else
     event.respond "Th-That is n-not who is h-holding me."
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -1175,10 +1188,7 @@ bot.command(:autotake) do |event|
     @stats[j][2][3]=true
     event << "\\*jumps into #{event.user.name}'s arms*"
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -1208,10 +1218,7 @@ bot.command(:endgame) do |event|
     event << ''
     event << 'I am now back on the floor and a new round begins.'
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -1255,10 +1262,7 @@ bot.command([:makeadmin,:makeguardian,:promote]) do |event, name|
       event.respond "#{@stats[j][1][i][1][1]} is now one of my guardians."
     end
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -1282,10 +1286,7 @@ bot.command([:notanadmin,:notaguardian]) do |event|
       event.respond "You are no longer one of my guardians."
     end
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -1327,10 +1328,7 @@ bot.command(:addnickname) do |event, newname, *args|
       end
     end
     event.respond msg
-    open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-      f << @stats.to_s
-      f << "\n"
-    }
+    save_stats_data()
     cross_update(bot, event)
     return nil
   end
@@ -1367,10 +1365,7 @@ bot.command(:addnickname) do |event, newname, *args|
     end
   end
   event.respond "#{newname} has been added to #{name}'s nicknames."
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   cross_update(bot,event.server.id)
   return nil
 end
@@ -1457,10 +1452,7 @@ bot.command([:deletenickname,:removenickname]) do |event, name, usr|
     @stats[j][1][u][1].compact!
     event.respond "#{name} has been removed from your nicknames."
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   return nil
 end
 
@@ -1492,11 +1484,11 @@ end
 def disp_support(event,bot)
   j=find_server_data(event,bot)
   i=find_user_data(event,bot)
-  event << "#{@stats[j][1][i][1][1]} and I h-have #{@stats[j][1][i][4][0]} Support Point#{"s" unless 1==@stats[j][1][i][4][0]}."
-  if ['','-'].include?(@stats[j][1][i][4][1])
+  event << "#{@stats[j][1][i][1][1]} and I h-have #{@stats[j][1][i][3][0]} Support Point#{"s" unless 1==@stats[j][1][i][3][0]}."
+  if ['','-'].include?(@stats[j][1][i][3][1])
     event << "We are as y-yet unranked."
   else
-    event << "We are c-currently at #{@stats[j][1][i][4][1]} Support."
+    event << "We are c-currently at #{@stats[j][1][i][3][1]} Support."
   end
 end
 
@@ -1580,15 +1572,6 @@ bot.command(:support) do |event|
   disp_support(event,bot)
 end
 
-def extend_message(msg1,msg2,event,enters=1)
-  if "#{msg1}#{"\n"*enters}#{msg2}".length>=2000
-    event.respond msg1
-    return msg2
-  else
-    return "#{msg1}#{"\n"*enters}#{msg2}"
-  end
-end
-
 bot.command(:snagchannels) do |event, server_id|
   return nil unless event.user.id==167657750971547648
   return nil if bot.user(bot.profile.id).on(server_id.to_i).nil?
@@ -1622,25 +1605,22 @@ bot.message do |event|
     find_sakura(event,bot,false)
   elsif rand(100)<1 || (event.user.id==167657750971547648 && rand(100)<25)
     # 1% chance of Support Point gain
-    @stats[j][1][i][4][0]+=1
-    @stats[j][1][i][4][1]='C' if @stats[j][1][i][4][0]==3
-    @stats[j][1][i][4][1]='B' if @stats[j][1][i][4][0]==3+4
-    @stats[j][1][i][4][1]='A' if @stats[j][1][i][4][0]==3+4+4
-    @stats[j][1][i][4][1]='A+' if @stats[j][1][i][4][0]==3+4+4+5
-    @stats[j][1][i][4][1]='S' if event.user.id==167657750971547648
+    @stats[j][1][i][3][0]+=1
+    @stats[j][1][i][3][1]='C' if @stats[j][1][i][3][0]==3
+    @stats[j][1][i][3][1]='B' if @stats[j][1][i][3][0]==3+4
+    @stats[j][1][i][3][1]='A' if @stats[j][1][i][3][0]==3+4+4
+    @stats[j][1][i][3][1]='A+' if @stats[j][1][i][3][0]==3+4+4+5
+    @stats[j][1][i][3][1]='S' if event.user.id==167657750971547648
     if !check_for_admin?(event,bot)
       chn=event.channel.id
       chn=435157862772113409 if event.server.id==435068874862362636
       chn=530826194007097384 if event.server.id==327599133210705923
-      bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached C Support.") if @stats[j][1][i][4][0]==3
-      bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached B Support.") if @stats[j][1][i][4][0]==3+4
-      bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached A Support.") if @stats[j][1][i][4][0]==3+4+4
-      bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached A+ Support.") if @stats[j][1][i][4][0]==3+4+4+5
+      bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached C Support.") if @stats[j][1][i][3][0]==3
+      bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached B Support.") if @stats[j][1][i][3][0]==3+4
+      bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached A Support.") if @stats[j][1][i][3][0]==3+4+4
+      bot.channel(chn).send_message("#{event.user.name[0,1]}-#{event.user.name} and I h-have r-reached A+ Support.") if @stats[j][1][i][3][0]==3+4+4+5
     end
-    open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-      f << @stats.to_s
-      f << "\n"
-    }
+    save_stats_data()
   end
   # stop checking the message if the server doesn't want the command-substitute messages to work
   next unless @stats[j][5]
@@ -1649,6 +1629,8 @@ bot.message do |event|
   s=remove_format(s.gsub('```',''),'`') # remove small code blocks
   next if !s.downcase.include?('sakura') # repeat this line at each stage, to prune messages and reduce strain on my laptop
   s=remove_format(s,'~~')               # remove crossed-out text
+  next if !s.downcase.include?('sakura')
+  s=remove_format(s,'||')               # remove spoiler tags
   next if !s.downcase.include?('sakura')
   s.downcase # make message lowercase so it's not case sensitive
   if /(find|where|where's|wheres|where is) sakura/ =~ s.downcase
@@ -1670,15 +1652,12 @@ bot.message do |event|
   elsif /(eat|swallow)(s|) sakura/ =~ s.downcase || /(put|place|set|slip|slide)(s|) sakura (in|into)( my|) (mouth|stomach)/ =~ s.downcase
     unless event.user.id==167657750971547648
       event.respond "\\*shivers in fear* D-Don't y-you d-dare!  M-Mathoo would k-kill y-you."
-      @stats[j][1][i][4][0]-=5
-      @stats[j][1][i][4][1]='A' if @stats[j][1][i][4][0]<3+4+4+5
-      @stats[j][1][i][4][1]='B' if @stats[j][1][i][4][0]<3+4+4
-      @stats[j][1][i][4][1]='C' if @stats[j][1][i][4][0]<3+4
-      @stats[j][1][i][4][1]='-' if @stats[j][1][i][4][0]<3
-      open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-        f << @stats.to_s
-        f << "\n"
-      }
+      @stats[j][1][i][3][0]-=5
+      @stats[j][1][i][3][1]='A' if @stats[j][1][i][3][0]<3+4+4+5
+      @stats[j][1][i][3][1]='B' if @stats[j][1][i][3][0]<3+4+4
+      @stats[j][1][i][3][1]='C' if @stats[j][1][i][3][0]<3+4
+      @stats[j][1][i][3][1]='-' if @stats[j][1][i][3][0]<3
+      save_stats_data()
     end
   elsif /(cuddle|snuggle|hug|huggle)(s|) sakura/ =~ s.downcase
     cuddle(event,bot)
@@ -1711,10 +1690,7 @@ bot.server_create do |event|
     @stats[@stats.length-1][1][@stats[@stats.length-1][1].length-1][2]=true if user.id==167657750971547648 || user.owner? # automatic admin privleges for bot coder and for the server owner
   end
   bot.user(167657750971547648).pm("Joined server **#{event.server.name}** (#{event.server.id})\nOwner: #{event.server.owner.distinct} (#{event.server.owner.id})")
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   greeting(event,bot)
 end
 
@@ -1723,10 +1699,7 @@ bot.server_delete do |event|
     @stats[i]=nil if @stats[i][0]==event.server.id
   end
   @stats.compact!
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
 end
 
 bot.member_join do |event|
@@ -1734,11 +1707,8 @@ bot.member_join do |event|
   unless event.user.bot_account?
     @stats[j][1].push([event.user.id,[event.user.distinct,event.user.name,event.user.display_name],false,event.user.mention,[0,''],[0,0]])
     @stats[j][1][@stats[j][1].length-1][2]=true if event.user.id==167657750971547648
-    @stats[j][1][@stats[j][1].length-1][4][1]='S' if event.user.id==167657750971547648
-    open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-      f << @stats.to_s
-      f << "\n"
-    }
+    @stats[j][1][@stats[j][1].length-1][3][1]='S' if event.user.id==167657750971547648
+    save_stats_data()
     cross_update(bot,event.server.id)
     find_channel(@stats[j][3],event).send_message("#{event.user.name} has j-joined the server!  \\*nervously hides*  Th-They have also j-joined the game!") rescue nil
   end
@@ -1761,12 +1731,9 @@ bot.member_leave do |event|
   if count_admins(event,bot,event.user.id)<=0
     new_admin=@stats[j][1].sample
     new_admin[2]=true
-    msg="#{msg}\nThey were my last guardian here, so I hope #{new_admin[3]} treats me well."
+    msg="#{msg}\nThey were my last guardian here, so I hope <@#{new_admin[0]}> treats me well."
   end
-  open('C:/Users/Mini-Matt/Desktop/devkit/SakuraBotEchoes.sav', 'w') { |f|
-    f << @stats.to_s
-    f << "\n"
-  }
+  save_stats_data()
   cross_update(bot,event.server.id)
   find_channel(@stats[j][3],event).send_message(msg) rescue nil
 end
