@@ -894,7 +894,7 @@ end
 
 def greeting(event,bot)
   j=find_server_data(event,bot)
-  f=@stats[@stats.length-1][1].reject{|q| !q[2]}.map{|q| "<@#{q[0]}>"}
+  f=@stats[j][1].reject{|q| !q[2]}.map{|q| "<@#{q[0]}>"}
   begin
     find_channel(@stats[j][3],event).send_embed("**H-Hello!  I'm S-Sakura.**") do |embed|
       embed.color=0xFFABAF
@@ -1705,7 +1705,7 @@ end
 bot.member_join do |event|
   j=find_server_data(event,bot)
   unless event.user.bot_account?
-    @stats[j][1].push([event.user.id,[event.user.distinct,event.user.name,event.user.display_name],false,event.user.mention,[0,''],[0,0]])
+    @stats[j][1].push([event.user.id,[event.user.distinct,event.user.name,event.user.display_name],false,[0,''],[0,0]])
     @stats[j][1][@stats[j][1].length-1][2]=true if event.user.id==167657750971547648
     @stats[j][1][@stats[j][1].length-1][3][1]='S' if event.user.id==167657750971547648
     save_stats_data()
