@@ -1282,7 +1282,7 @@ bot.command([:notanadmin,:notaguardian]) do |event|
   end
   for i in 0...@stats[j][1].length
     if @stats[j][1][i][0]==event.user.id
-      @stats[j][1][i][2]=true
+      @stats[j][1][i][2]=false
       event.respond "You are no longer one of my guardians."
     end
   end
