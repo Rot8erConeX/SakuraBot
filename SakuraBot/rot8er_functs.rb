@@ -27,6 +27,7 @@ def get_donor_list()
       b[i][0]=b[i][0].to_i
       b[i][2]=b[i][2].to_i
       b[i][3]=b[i][3].split('/').map{|q| q.to_i} unless b[i][3].nil?
+      b[i][4]=b[i][4].split(', ') unless b[i][4].nil?
     end
   else
     b=[]
@@ -203,6 +204,15 @@ end
 def avg_color(c,mode=0)
   m=[0,0,0]
   for i in 0...c.length
+    unless c[i].is_a?(Array)
+      x=1*c[i]
+      c[i]=[]
+      c[i].push(x/(256*256))
+      x=x % (256*256)
+      c[i].push(x/256)
+      x=x%256
+      c[i].push(x)
+    end
     m[0]+=c[i][0]
     m[1]+=c[i][1]
     m[2]+=c[i][2]
@@ -228,6 +238,7 @@ def longFormattedNumber(number,cardinal=false)
     end
     return "#{longFormattedNumber(number,false)}#{k}"
   end
+  return "1,000" if number==1000
   return "#{number}" if number<1000
   if number<1000
     bob="#{number%1000}"
@@ -565,6 +576,77 @@ def create_embed(event,header,text,xcolor=nil,xfooter=nil,xpic=nil,xfields=nil,m
   return nil
 end
 
+def triple_weakness(bot,event)
+  types=[[1, 1,   1,   1,   1,   0.5, 1,   0,   0.5, 1,   1,   1,   1,   1,   1,   1,   1,   1,   "Normal",   0xA8A77A],
+         [2, 1,   0.5, 0.5, 1,   2,   0.5, 0,   2,   1,   1,   1,   1,   0.5, 2,   1,   2,   0.5, "Fighting", 0xC22E28],
+         [1, 2,   1,   1,   1,   0.5, 2,   1,   0.5, 1,   1,   2,   0.5, 1,   1,   1,   1,   1,   "Flying",   0xA98FF3],
+         [1, 1,   1,   0.5, 0.5, 0.5, 1,   0.5, 0,   1,   1,   2,   1,   1,   1,   1,   1,   2,   "Poison",   0xA33EA1],
+         [1, 1,   0,   2,   1,   2,   0.5, 1,   2,   2,   1,   0.5, 2,   1,   1,   1,   1,   1,   "Ground",   0xE2BF65],
+         [1, 0.5, 2,   1,   0.5, 1,   2,   1,   0.5, 2,   1,   1,   1,   1,   2,   1,   1,   1,   "Rock",     0xB6A136],
+         [1, 0.5, 0.5, 0.5, 1,   1,   1,   0.5, 0.5, 0.5, 1,   2,   1,   2,   1,   1,   2,   0.5, "Bug",      0xA6B91A],
+         [0, 1,   1,   1,   1,   1,   1,   2,   1,   1,   1,   1,   1,   2,   1,   1,   0.5, 1,   "Ghost",    0x735797],
+         [1, 1,   1,   1,   1,   2,   1,   1,   0.5, 0.5, 0.5, 1,   0.5, 1,   2,   1,   1,   2,   "Steel",    0xB7B7CE],
+         [1, 1,   1,   1,   1,   0.5, 2,   1,   2,   0.5, 0.5, 2,   1,   1,   2,   0.5, 1,   1,   "Fire",     0xEE8130],
+         [1, 1,   1,   1,   2,   2,   1,   1,   1,   2,   0.5, 0.5, 1,   1,   1,   0.5, 1,   1,   "Water",    0x6390F0],
+         [1, 1,   0.5, 0.5, 2,   2,   0.5, 1,   0.5, 0.5, 2,   0.5, 1,   1,   1,   0.5, 1,   1,   "Grass",    0x7AC74C],
+         [1, 1,   2,   1,   0,   1,   1,   1,   1,   1,   2,   0.5, 0.5, 1,   1,   0.5, 1,   1,   "Electric", 0xF7D02C],
+         [1, 2,   1,   2,   1,   1,   1,   1,   0.5, 1,   1,   1,   1,   0.5, 1,   1,   0,   1,   "Psychic",  0xF95587],
+         [1, 1,   2,   1,   2,   1,   1,   1,   0.5, 0.5, 0.5, 2,   1,   1,   0.5, 2,   1,   1,   "Ice",      0x96D9D6],
+         [1, 1,   1,   1,   1,   1,   1,   1,   0.5, 1,   1,   1,   1,   1,   1,   2,   1,   0,   "Dragon",   0x6F35FC],
+         [1, 0.5, 1,   1,   1,   1,   1,   2,   1,   1,   1,   1,   1,   2,   1,   1,   0.5, 0.5, "Dark",     0x705746],
+         [1, 2,   1,   0.5, 1,   1,   1,   1,   0.5, 0.5, 1,   1,   1,   1,   1,   2,   2,   1,   "Fairy",    0xD685AD]]
+  args=event.message.text.downcase.gsub(',','').split(' ')
+  args=args.reject{ |a| a.match(/<@!?(?:\d+)>/) }
+  tpz=[]
+  inv=false
+  for i in 0...args.length
+    for j in 0...types.length
+      tpz.push(j) if args[i]==types[j][18].downcase
+    end
+    inv=true if ['inverse','reverse','backwards'].include?(args[i])
+  end
+  tpz=tpz.uniq
+  if @shardizard==4
+  elsif !event.server.nil? && event.server.id==330850148261298176 && bot.user(206147275775279104).on(event.server.id).nil?
+  else
+    return nil if tpz.length<3 && !inv
+  end
+  if inv
+    for i in 0...types.length
+      for i2 in 0...types.length
+        if types[i][i2]==0
+          types[i][i2]=2
+        else
+          types[i][i2]=1.0/types[i][i2]
+        end
+      end
+    end
+  end
+  w=types.map{|q| [q[18],1]}
+  colors=[]
+  for i in 0...3
+    colors.push(types[tpz[i]][19])
+    for i2 in 0...w.length
+      w[i2][1]*=types[i2][tpz[i]]
+    end
+  end
+  w.push(['~~Flying Press~~',w[1][1]*w[2][1]])
+  w.push(['~~Freeze Dry~~',w[10][1]*4]) if tpz[0,3].map{|q| types[q][18]}.include?('Water') && !inv
+  for i in 0...w.length
+    w[i][1]=w[i][1].to_i if w[i][1]==w[i][1].to_i
+  end
+  flds=[['8x weak to:',w.reject{|q| q[1]!=8}.map{|q| q[0]}.join(', ')],
+        ['4x weak to:',w.reject{|q| q[1]!=4}.map{|q| q[0]}.join(', ')],
+        ['2x weak to:',w.reject{|q| q[1]!=2}.map{|q| q[0]}.join(', ')],
+        ['Takes neutral damage from:',w.reject{|q| q[1]!=1}.map{|q| q[0]}.join(', ')],
+        ['2x resists:',w.reject{|q| q[1]!=0.5}.map{|q| q[0]}.join(', ')],
+        ['4x resists:',w.reject{|q| q[1]!=0.25}.map{|q| q[0]}.join(', ')],
+        ['8x resists:',w.reject{|q| q[1]!=0.125}.map{|q| q[0]}.join(', ')],
+        ['Immune to:',w.reject{|q| q[1]!=0}.map{|q| q[0]}.join(', ')]]
+  flds=flds.reject{|q| q[1].nil? || q[1].length<=0}
+  create_embed(event,"#{tpz[0,3].map{|q| types[q][18]}.join('/')}#{' (in an Inverse Battle)' if inv}",flds.map{|q| "**#{q[0]}**\n#{q[1]}"}.join("\n\n"),avg_color(colors))
+end
+
 def embedless_swap(bot,event)
   metadata_load()
   if @embedless.include?(event.user.id)
@@ -668,7 +750,7 @@ def bug_report(bot,event,args,shrd_num,shrd_names,shrd_type,pref,echo=nil)
       s="**Server:** #{event.server.name} (#{event.server.id}) - #{shrd_names[(event.server.id >> 22) % shrd_num]} #{shrd_type}\n**Channel:** #{event.channel.name} (#{event.channel.id})"
     end
     bot.user(167657750971547648).pm("#{s}\n#{event.user.distinct} (#{event.user.id}) just tried to use the #{s3.downcase} command but gave no arguments.")
-    bot.channel(echo).send_message("#{s}\n#{event.user.distinct} (#{event.user.id}) just tried to use the #{s3.downcase} command but gave no arguments.") unless echo.nil?
+    bot.channel(echo).send_message("#{s}\n#{event.user.distinct} (#{event.user.id}) just tried to use the #{s3.downcase} command but gave no arguments.") unless echo.nil? || bot.channel(echo).nil?
     return nil
   elsif event.server.nil?
     s="**#{s3} sent by PM**"
@@ -678,7 +760,7 @@ def bug_report(bot,event,args,shrd_num,shrd_names,shrd_type,pref,echo=nil)
   f=event.message.text.split(' ')
   f="#{f[0]} "
   bot.user(167657750971547648).pm("#{s}\n**User:** #{event.user.distinct} (#{event.user.id})\n**#{s3}:** #{first_sub(event.message.text,f,'',1)}")
-  bot.channel(echo).send_message("#{s}\n**User:** #{event.user.distinct} (#{event.user.id})\n**#{s3}:** #{first_sub(event.message.text,f,'',1)}") unless echo.nil?
+  bot.channel(echo).send_message("#{s}\n**User:** #{event.user.distinct} (#{event.user.id})\n**#{s3}:** #{first_sub(event.message.text,f,'',1)}") unless echo.nil? || bot.channel(echo).nil?
   s3='Bug' if s3=='Bug Report'
   t=Time.now
   event << "Your #{s3.downcase} has been logged."
@@ -721,4 +803,15 @@ def calc_easter()
     d = l1 + 28 - 31 * (m / 4)
   end
   return [y,m,d]
+end
+
+def get_debug_leave_message()
+  str="I am Mathoo's personal debug bot.  As such, I do not belong here.  You may be looking for one of my facets, so I'll drop all the invite links here."
+  str="#{str}\n\n**EliseBot** allows you to look up stats and skill data for characters in *Fire Emblem: Heroes*"
+  str="#{str}\nHere's her invite link: <https://goo.gl/Hf9RNj>"
+  str="#{str}\n\n**RobinBot**, also known as **FEIndex**, is for *Fire Emblem: Awakening* and *Fire Emblem Fates*."
+  str="#{str}\nHere's her invite link: <https://goo.gl/f1wSGd>"
+  str="#{str}\n\n**LizBot** allows you to look up stats, mats, and skill data in *Fate/Grand Order*"
+  str="#{str}\nHere's her invite link: <https://goo.gl/ox9CxB>"
+  return str
 end
