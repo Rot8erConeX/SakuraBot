@@ -1,3 +1,4 @@
+system("color 0f")
 system("title loading SakuraBot_Echoes")
 
 require 'discordrb' # Download link: https://github.com/meew0/discordrb
