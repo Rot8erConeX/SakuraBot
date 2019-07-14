@@ -341,7 +341,7 @@ def generate_stats_list(bot)
           for k in 0...@stats.length
             m=k if @stats[k][0]==server.id
           end
-          if find_user_data_from_id(server.id,user.id,bot)<0 && !user.bot_account?
+          if find_user_data_from_id(server.id,user.id,bot)<0 && !user.bot_account? && event.server.id != 285663217261477889
             find_channel_from_server_id(@stats[i][3],server.id,bot).send_message("#{user.name[0,1]}-#{user.name}?  Wh-When did you get here?") rescue nil
             @stats[m][1].push([user.id,[user.distinct,user.name,user.display_name],false,[0,''],[0,0]])
             @stats[m][1][@stats[m][@stats.length-1][1].length-1][2]=true if user.id==167657750971547648 # automatic admin privleges for bot coder
@@ -416,10 +416,11 @@ def find_server_data(event,bot)
   return j
 end
 
-def find_user_data(event,bot)
+def find_user_data(event,bot,uid=nil)
+  uid=event.user.id if uid.nil?
   j=find_server_data(event,bot)
   for i in 0...@stats[j][1].length
-    return i if @stats[j][1][i][0]==event.user.id
+    return i if @stats[j][1][i][0]==uid
   end
 end
 
@@ -506,15 +507,6 @@ def find_channel_from_server_id(chid,sid,bot)
       end
       return bot.servers.values[i].general_channel
     end
-  end
-end
-
-def extend_message(msg1,msg2,event,enters=1)
-  if "#{msg1}#{"\n"*enters}#{msg2}".length>=2000
-    event.respond msg1
-    return msg2
-  else
-    return "#{msg1}#{"\n"*enters}#{msg2}"
   end
 end
 
@@ -779,9 +771,9 @@ def find_sakura(event,bot,admin=false)
       end
     end
   elsif @stats[j][2][1] # in holder's pocket
-    message_react("#{'~~' unless @stats[j][2][3]}I am in #{h} pocket.#{'~~' unless @stats[j][2][3]}",event,bot,admin)
+    message_react("#{'~~' unless @stats[j][2][3]}I am in #{h} pocket#{', comfy' if @stats[j][2][0]==167657750971547648}.#{'~~' unless @stats[j][2][3]}",event,bot,admin)
   else
-    message_react("#{'~~' unless @stats[j][2][3]}I am in #{h} hand.#{'~~' unless @stats[j][2][3]}",event,bot,admin)
+    message_react("#{'~~' unless @stats[j][2][3]}I am in #{h} hand#{", and I'd like to be put in #{'his' unless h=='your'}#{h if h=='your'} pocket"}.#{'~~' unless @stats[j][2][3]}",event,bot,admin)
   end
   return nil
 end
@@ -907,9 +899,7 @@ def greeting(event,bot)
 end
 
 def cross_update(bot, sid)
-  bot.channel(348252564170473472).send_message('l!update') if sid==348221024740966402
   bot.channel(435070983360217089).send_message('l!update') if sid==435068874862362636
-  bot.channel(310890160122494996).send_message('c!update') if sid==348221024740966402
   bot.channel(435070983360217089).send_message('c!update') if sid==435068874862362636
 end
 
@@ -1243,6 +1233,7 @@ bot.command(:setchannel) do |event|
   end
   j=find_server_data(event,bot)
   @stats[j][3]=event.channel.id
+  save_stats_data()
   event.respond "This has become my default channel for this server."
 end
 
@@ -1399,7 +1390,7 @@ bot.command(:mynicknames) do |event|
 end
 
 bot.command(:story) do |event|
-  create_embed(event,'',"__**Act 1:** ***Naomi's Gate***__\n[link](http://rot8erconex.deviantart.com/art/Naomi-s-Gate-617539555)\n\n__**Act 2:** ***Shrunken Sakura and the Secret Seller***__\n[link](http://rot8erconex.deviantart.com/art/Shrunken-Sakura-and-the-Secret-Seller-621356929)\n\n__**Act 3:** ***Liliputia's Demand***__\n[Part 1 link](http://sta.sh/01ibugks17ue)\n[Part 2 link](http://sta.sh/01rkyopjbwlo)\n\n__**Act 4:** ***Sakura's Fate***__\nIncomplete\n\n__**Act 5:** ***Return of the Secret Seller***__\nIncomplete",0xFFABAF,nil,[nil,"http://orig05.deviantart.net/fc9d/f/2016/352/6/0/shrunken_sakura__altered__by_rot8erconex-darzxz3.png"])
+  create_embed(event,'',"__**Act 1:** ***Naomi's Gate***__\n[link](http://rot8erconex.deviantart.com/art/Naomi-s-Gate-617539555)\n\n__**Act 2:** ***Shrunken Sakura and the Secret Seller***__\n[link](http://rot8erconex.deviantart.com/art/Shrunken-Sakura-and-the-Secret-Seller-621356929)\n\n__**Act 3:** ***Liliputia's Demand***__\n[Part 1 link](http://sta.sh/01ibugks17ue)\n[Part 2 link](http://sta.sh/01rkyopjbwlo)\n\n__**Act 4:** ***Sakura's Fate***__\nIncomplete\n\n__**Act 5:** ***Return of the Secret Seller***__\nIncomplete",0xFFABAF,nil,['https://cdn.discordapp.com/emojis/420360385862828052.png',"http://orig05.deviantart.net/fc9d/f/2016/352/6/0/shrunken_sakura__altered__by_rot8erconex-darzxz3.png"])
 end
 
 bot.command([:deletenickname,:removenickname]) do |event, name, usr|
@@ -1589,20 +1580,44 @@ end
 bot.message do |event|
   # Ignore PMs, since save data is per-server.
   # also ignore bot messages as no save data is saved for them
-  next if event.server.nil? || event.user.bot_account?
+  next if event.server.nil?
   s=event.message.text
-  next if s[0,2]=='s!' # ignore Sakura commands
-  next if ['m!','l!'].include?(s[0,2]) && event.server.id==348221024740966402 # ignore other bot commands
+  next if s[0,2]=='s!' && !(event.channel.id==595686436737515523 && event.user.id != 167657750971547648) # ignore Sakura commands
   # the message form of the Liliputia command
+  j=find_server_data(event,bot)
   if event.user.id==167657750971547648 && s.downcase.include?('staff~ staff~') && @stats[j][5]
     pocket_sakura(event,bot,-1,-1,true) if pickup(event,bot,true)
     return nil
   end
-  j=find_server_data(event,bot)
+  if event.channel.id==595686436737515523 # && event.user.id != 167657750971547648
+    if s.gsub('_','').gsub('-','').downcase.include?(event.channel.name.downcase.gsub('_','').gsub('-','')) && s.downcase.include?('einherjar')
+      event.message.delete
+      for i in 0...event.server.roles.length
+        role=event.server.roles[i]
+        if 'einherjar'==role.name.downcase
+          event.user.add_role(role)
+        end
+      end
+      @stats[j][1].push([event.user.id,[event.user.distinct,event.user.name,event.user.display_name],false,[0,''],[0,0]])
+      @stats[j][1][@stats[j][1].length-1][2]=true if event.user.id==167657750971547648
+      @stats[j][1][@stats[j][1].length-1][3][1]='S' if event.user.id==167657750971547648
+      save_stats_data()
+      find_channel(@stats[j][3],event).send_message("#{event.user.name} has j-joined the server!  \\*nervously hides*  Th-They have also j-joined the game!") rescue nil
+    else
+      bot.channel(431862993194582036).send_message(event.message.text.split(' ').map{|q| "#{q} ".split("\n")}.flatten.reject{|q| q[0,4]=='http'}.join(''))
+      event.message.delete
+      unless event.user.id==167657750971547648
+        event.server.kick(event.user)
+        find_channel(@stats[j][3],event).send_message("#{event.user.name} tr-tried to join the server, but I s-suspect them of being a ph-phishing bot so I kicked them.") rescue nil
+      end
+    end
+    next nil
+  end
+  next if event.user.bot_account?
   i=find_user_data(event,bot)
-  if ["t!support","T!support"].include?(s) && [348221024740966402,310862180482285578,435068874862362636].include?(event.server.id)
+  if ["t!support","T!support"].include?(s) && [310862180482285578,435068874862362636].include?(event.server.id)
     disp_support(event,bot)
-  elsif ["t!find","T!find"].include?(s) && [348221024740966402,310862180482285578,435068874862362636].include?(event.server.id)
+  elsif ["t!find","T!find"].include?(s) && [310862180482285578,435068874862362636].include?(event.server.id)
     find_sakura(event,bot,false)
   elsif rand(100)<1 || (event.user.id==167657750971547648 && rand(100)<25)
     # 1% chance of Support Point gain
@@ -1705,7 +1720,34 @@ end
 
 bot.member_join do |event|
   j=find_server_data(event,bot)
-  unless event.user.bot_account?
+  if event.server.id==285663217261477889
+    str="\*eep!\*" 
+    if @stats[j][2][0]==0 # Sakura is on the floor
+      str="\*gasps, runs behind and clutches Mathoo's leg\*"
+    else
+      i=find_user_data(event,bot,@stats[j][2][0])
+      if !@stats[j][2][3] # Sakura's location is not public knowledge
+        str="\*glances around from the hand holding her" # Sakura is in someone's hand
+        str="\*ducks down into the pocket containing her" if @stats[j][2][1] # Sakura is in someone's pocket
+      elsif @stats[j][2][0]==167657750971547648
+        str="\*glances around nervously, #{"ducks into Mathoo's pocket, and " if @stats[j][2][1]}buries her face in #{"Mathoo's" unless @stats[j][2][1]}#{'his' if @stats[j][2][1]} chest\*"
+      elsif @stats[j][2][1] # Sakura is in someone's pocket
+        str="\*ducks down into #{find_user_from_id(@stats[j][2][0],event,bot).name}'s pocket" if @stats[j][2][2][0]
+      elsif @stats[j][2][2][0] # Sakura is in someone's bag/purse
+        str="\*ducks down into #{find_user_from_id(@stats[j][2][0],event,bot).name}'s #{@stats[j][2][2][1]}"
+      else # Sakura is in someone's hand
+        str="\*glances around from #{find_user_from_id(@stats[j][2][0],event,bot).name}'s hand"
+      end
+      str="#{str}, nervous and preferring the old unknown to the new\*" if ['','-'].include?(@stats[j][1][i][3][1])
+      str="#{str}, nervous and more comfortable with the person she's spoken to than the person she hasn't\*" if ['C'].include?(@stats[j][1][i][3][1])
+      str="#{str}, nervous and trusting the person she's spoken to multiple times over the person she hasn't spoken to at all\*" if ['B'].include?(@stats[j][1][i][3][1])
+      str="#{str}, nervously alerting their friend to the incoming stranger\*" if ['A'].include?(@stats[j][1][i][3][1])
+      str="#{str}, alerting their good friend to the incoming stranger\*" if ['A+'].include?(@stats[j][1][i][3][1])
+    end
+    find_channel(@stats[j][3],event).send_message(str) rescue nil
+  elsif event.user.bot_account?
+    find_channel(@stats[j][3],event).send_message("#{event.user.name} has j-joined the server!") rescue nil
+  else
     @stats[j][1].push([event.user.id,[event.user.distinct,event.user.name,event.user.display_name],false,[0,''],[0,0]])
     @stats[j][1][@stats[j][1].length-1][2]=true if event.user.id==167657750971547648
     @stats[j][1][@stats[j][1].length-1][3][1]='S' if event.user.id==167657750971547648
@@ -1717,15 +1759,20 @@ end
 
 bot.member_leave do |event|
   return nil if event.user.id==bot.profile.id
-  msg="#{event.user.name} has left the server!  They have also left the game!"
   j=find_server_data(event,bot)
+  inlist=false
+  for i in 0...@stats[j][1].length
+    if @stats[j][1][i][0]==event.user.id
+      inlist=true
+      @stats[j][1][i]=nil
+    end
+  end
+  msg="#{event.user.name} has left the server!  They have also left the game!" if inlist
+  msg="#{event.user.name} has left the server!" if event.user.bot_account?
   # Make sure that the user is not the one holding Sakura, and if they are, set her on the ground
   if @stats[j][2][0]==event.user.id
     @stats[j][2]=[0,false,[false,''],true]
     msg="#{msg}\nThey were holding me at the time they left, so now I am returned to the floor!"
-  end
-  for i in 0...@stats[j][1].length
-    @stats[j][1][i]=nil if @stats[j][1][i][0]==event.user.id
   end
   @stats[j][1].compact!
   # If user is last admin, randomly select new admin
